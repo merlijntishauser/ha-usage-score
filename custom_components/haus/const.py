@@ -114,3 +114,12 @@ NEUTRAL_METRIC_SCORE = 50.0
 # Knee for notifications sent in the window. Thirty over thirty days is roughly
 # one a day, which is a house that talks back.
 K_NOTIFICATION_COUNT = 30.0
+
+# Storage for the counters HAUS keeps itself. Bumping the version requires a
+# migration in store.py; the counters are cheap to lose but not free.
+STORAGE_VERSION = 1
+STORAGE_KEY = "haus.counters"
+
+# Debounce for writes. Notifications can arrive in bursts, and none of this is
+# worth a disk write per event.
+STORE_SAVE_DELAY_SECONDS = 60
