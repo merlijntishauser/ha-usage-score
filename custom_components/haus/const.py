@@ -47,3 +47,8 @@ AUTOMATION_DOMAIN = "automation"
 # Title of the single config entry, and the name of the service device the
 # entities hang off.
 INTEGRATION_TITLE = "HAUS"
+
+# Coordinator refresh interval, in minutes. Everything collected is a registry
+# or state read, so this is cheap; five minutes keeps the card feeling live
+# without putting a pointless load on the event loop.
+UPDATE_INTERVAL_MINUTES = 5
