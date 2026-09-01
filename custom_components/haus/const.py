@@ -38,3 +38,8 @@ SCORE_TIERS: tuple[tuple[int, str], ...] = (
 # 63% mark there and still gives the first few automations real weight. The
 # usage pillar grows further in M1; this is the seed signal.
 K_AUTOMATION_COUNT = 12.0
+
+# Entity domain of automations. Spelled out rather than imported from
+# homeassistant.components.automation, which would pull the whole component in
+# for the sake of one string.
+AUTOMATION_DOMAIN = "automation"
