@@ -6,6 +6,7 @@ from custom_components.haus.scoring import (
     PillarScores,
     compute_score,
     effective_weights,
+    tier_for_score,
 )
 
 
@@ -44,3 +45,23 @@ def test_effective_weights_sum_to_one_with_or_without_hygiene() -> None:
 def test_effective_weights_drop_hygiene_when_it_is_unavailable() -> None:
     """The pillar is dropped, not zeroed - zeroing would tank the score."""
     assert "hygiene" not in effective_weights(hygiene_available=False)
+
+
+@pytest.mark.parametrize(
+    ("score", "expected"),
+    [
+        (0, "Starter"),
+        (39, "Starter"),
+        (40, "Tinkerer"),
+        (59, "Tinkerer"),
+        (60, "Enthusiast"),
+        (79, "Enthusiast"),
+        (80, "Power user"),
+        (92, "Power user"),
+        (93, "Overengineered"),
+        (100, "Overengineered"),
+    ],
+)
+def test_tier_boundaries(score: int, expected: str) -> None:
+    """Every tier edge, from both sides."""
+    assert tier_for_score(score) == expected

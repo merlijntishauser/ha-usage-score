@@ -9,7 +9,7 @@ dataclasses is the job of `collectors.py`.
 import math
 from dataclasses import dataclass
 
-from .const import PILLAR_WEIGHTS, SCORE_MAX, SCORE_MIN
+from .const import PILLAR_WEIGHTS, SCORE_MAX, SCORE_MIN, SCORE_TIERS
 
 
 @dataclass(frozen=True)
@@ -51,3 +51,12 @@ def compute_score(pillars: PillarScores) -> int:
     if pillars.hygiene is not None:
         total += weights["hygiene"] * pillars.hygiene
     return max(SCORE_MIN, min(SCORE_MAX, math.floor(total)))
+
+
+def tier_for_score(score: int) -> str:
+    """Return the tier label for a score."""
+    label = SCORE_TIERS[0][1]
+    for threshold, tier in SCORE_TIERS:
+        if score >= threshold:
+            label = tier
+    return label
