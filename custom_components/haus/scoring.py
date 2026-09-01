@@ -106,3 +106,29 @@ def tier_for_score(score: int) -> str:
         if score >= threshold:
             label = tier
     return label
+
+
+@dataclass(frozen=True)
+class ScoreResult:
+    """Everything the score sensor publishes, assembled in one pure call."""
+
+    score: int
+    tier: str
+    pillars: PillarScores
+    contributions: dict[str, float]
+    effective_weights: dict[str, float]
+    haghs_available: bool
+
+
+def build_result(pillars: PillarScores) -> ScoreResult:
+    """Assemble the full published result for a set of pillar scores."""
+    score = compute_score(pillars)
+    hygiene_available = pillars.hygiene is not None
+    return ScoreResult(
+        score=score,
+        tier=tier_for_score(score),
+        pillars=pillars,
+        contributions=pillar_contributions(pillars),
+        effective_weights=effective_weights(hygiene_available=hygiene_available),
+        haghs_available=hygiene_available,
+    )

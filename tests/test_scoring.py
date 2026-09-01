@@ -6,7 +6,9 @@ import pytest
 
 from custom_components.haus.scoring import (
     PillarScores,
+    ScoreResult,
     UsageSignals,
+    build_result,
     compute_score,
     effective_weights,
     pillar_contributions,
@@ -155,3 +157,25 @@ def test_usage_pillar_rises_with_the_automation_count() -> None:
 def test_usage_pillar_stays_within_bounds() -> None:
     """A pillar is always on the same 0-100 scale as every other pillar."""
     assert 0.0 <= score_usage(UsageSignals(automation_count=5_000)) <= 100.0
+
+
+def test_build_result_assembles_everything_the_sensor_publishes() -> None:
+    """One pure call produces the score and every attribute hung off it."""
+    pillars = PillarScores(hygiene=84.0, usage=70.0, diversity=61.0, users=66.0)
+
+    result = build_result(pillars)
+
+    assert isinstance(result, ScoreResult)
+    assert result.score == compute_score(pillars)
+    assert result.tier == tier_for_score(result.score)
+    assert result.haghs_available is True
+    assert result.contributions == pillar_contributions(pillars)
+    assert result.effective_weights == effective_weights(hygiene_available=True)
+
+
+def test_build_result_reports_hygiene_as_unavailable_when_absent() -> None:
+    """The card needs to know to draw the ghost row, not silently drop it."""
+    result = build_result(PillarScores(None, usage=70.0, diversity=61.0, users=66.0))
+
+    assert result.haghs_available is False
+    assert "hygiene" not in result.effective_weights
