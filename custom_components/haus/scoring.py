@@ -51,16 +51,29 @@ def effective_weights(*, hygiene_available: bool) -> dict[str, float]:
     return {name: w / owned_total for name, w in owned.items()}
 
 
+def pillar_contributions(pillars: PillarScores) -> dict[str, float]:
+    """Return the points each pillar actually contributed to the score.
+
+    These are what the card draws its ring arcs from: the gap to a full circle
+    is the unearned points, colour-coded by which pillar to go and fix. Keyed in
+    canonical pillar order; an absent hygiene pillar is simply not present.
+    """
+    weights = effective_weights(hygiene_available=pillars.hygiene is not None)
+    values: dict[str, float] = {
+        "usage": pillars.usage,
+        "diversity": pillars.diversity,
+        "users": pillars.users,
+    }
+    if pillars.hygiene is not None:
+        values["hygiene"] = pillars.hygiene
+    return {
+        name: weights[name] * values[name] for name in PILLAR_WEIGHTS if name in values
+    }
+
+
 def compute_score(pillars: PillarScores) -> int:
     """Return the weighted overall score for the given pillar scores."""
-    weights = effective_weights(hygiene_available=pillars.hygiene is not None)
-    total = (
-        weights["usage"] * pillars.usage
-        + weights["diversity"] * pillars.diversity
-        + weights["users"] * pillars.users
-    )
-    if pillars.hygiene is not None:
-        total += weights["hygiene"] * pillars.hygiene
+    total = sum(pillar_contributions(pillars).values())
     return max(SCORE_MIN, min(SCORE_MAX, math.floor(total)))
 
 

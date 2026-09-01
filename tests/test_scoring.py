@@ -8,6 +8,7 @@ from custom_components.haus.scoring import (
     PillarScores,
     compute_score,
     effective_weights,
+    pillar_contributions,
     saturate,
     tier_for_score,
 )
@@ -107,3 +108,30 @@ def test_saturate_rewards_small_homes_faster_than_a_linear_ratio() -> None:
     """Half of k must already be worth more than half the points a linear
     ratio against a large target would give: small homes are not punished."""
     assert saturate(5, k=10.0) > 50.0 * (5 / 10)
+
+
+def test_contributions_sum_to_the_overall_score() -> None:
+    """The ring is drawn from these, so they must reconcile with the number."""
+    pillars = PillarScores(hygiene=84.0, usage=70.0, diversity=61.0, users=66.0)
+
+    total = sum(pillar_contributions(pillars).values())
+
+    assert math.floor(total) == compute_score(pillars)
+
+
+def test_contributions_reconcile_without_hygiene_too() -> None:
+    """The renormalised weights must be the ones used for the arcs."""
+    pillars = PillarScores(hygiene=None, usage=70.0, diversity=61.0, users=66.0)
+
+    total = sum(pillar_contributions(pillars).values())
+
+    assert math.floor(total) == compute_score(pillars)
+    assert "hygiene" not in pillar_contributions(pillars)
+
+
+def test_a_contribution_is_the_pillar_score_times_its_effective_weight() -> None:
+    """Arc length is points earned, not raw score."""
+    pillars = PillarScores(hygiene=84.0, usage=70.0, diversity=61.0, users=66.0)
+    weight = effective_weights(hygiene_available=True)["usage"]
+
+    assert pillar_contributions(pillars)["usage"] == pytest.approx(weight * 70.0)
