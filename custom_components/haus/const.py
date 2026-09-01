@@ -123,3 +123,6 @@ STORAGE_KEY = "haus.counters"
 # Debounce for writes. Notifications can arrive in bursts, and none of this is
 # worth a disk write per event.
 STORE_SAVE_DELAY_SECONDS = 60
+
+# Service domain whose calls count as a notification going out.
+NOTIFY_DOMAIN = "notify"
