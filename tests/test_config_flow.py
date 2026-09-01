@@ -5,7 +5,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.haus.const import CONF_EXPOSE_PER_USER_DETAIL, DOMAIN
+from custom_components.haus.const import (
+    CONF_EXPOSE_PER_USER_DETAIL,
+    CONF_HAGHS_ENTITY_ID,
+    DEFAULT_HAGHS_ENTITY_ID,
+    DOMAIN,
+)
 
 
 async def test_user_flow_creates_the_entry(
@@ -92,3 +97,35 @@ async def test_changing_options_reloads_without_a_restart(
 
     assert entry.state is ConfigEntryState.LOADED
     assert hass.states.get("sensor.haus_score") is not None
+
+
+async def test_the_haghs_entity_id_defaults_to_the_standard_one(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Most instances never touch it."""
+    entry = await _setup_entry(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {})
+    await hass.async_block_till_done()
+
+    assert entry.options[CONF_HAGHS_ENTITY_ID] == DEFAULT_HAGHS_ENTITY_ID
+
+
+async def test_the_haghs_entity_id_can_be_pointed_somewhere_else(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Users rename things, and renaming must not orphan the pillar."""
+    entry = await _setup_entry(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_EXPOSE_PER_USER_DETAIL: False,
+            CONF_HAGHS_ENTITY_ID: "sensor.house_health",
+        },
+    )
+    await hass.async_block_till_done()
+
+    assert entry.options[CONF_HAGHS_ENTITY_ID] == "sensor.house_health"
