@@ -31,15 +31,14 @@ Under construction, built in vertical slices.
 | M1 - usage pillar, with the notify tally | done |
 | M2 - diversity pillar and the missing-groups set | done |
 | M3 - users pillar, aggregate only | done |
-| M4 - hygiene pillar consumed from HAGHS | next |
-| M5 - the bundled `haus-card`, hero and degraded states | |
+| M4 - hygiene pillar consumed from HAGHS | done |
+| M5 - the bundled `haus-card`, hero and degraded states | next |
 | M6 - breakdown, detail cards, badge and tile | |
 | M7 - community percentile, opt-in and off by default | |
 | M8 - docs, HACS default submission, brands PR | |
 
-Today `sensor.haus_score` is computed from the three owned pillars - usage,
-diversity and users - through the same renormalised path an instance without
-HAGHS will use for good.
+All four pillars are live. `sensor.haus_score` carries the whole scoring
+model; what remains is the card that draws it.
 
 ### The usage pillar
 
@@ -114,6 +113,25 @@ websocket command, `haus/user_activity`, which requires administrator rights
 *and* the per-user detail option, which is off by default. With the option off
 the command refuses rather than returning an empty list, so the refusal is
 legible. Nothing leaves the instance either way.
+
+### The hygiene pillar
+
+HAUS does not recompute hygiene. No zombie-entity counting, no database size,
+no backup checks - that is [HAGHS](https://github.com/D-N91/home-assistant-global-health-score)'s
+job and it is settled. HAUS reads `sensor.haghs_global_score` and weights it at
+30%.
+
+Detection is by **loaded config entry** for the `haghs` domain, re-evaluated on
+every refresh and immediately when a config entry for that domain is added or
+removed - so installing HAGHS later makes the pillar appear without touching
+HAUS's configuration. There is deliberately no `dependencies` or
+`after_dependencies` entry in the manifest: HAUS must set up cleanly with HAGHS
+absent, and it does.
+
+Missing, `unknown`, `unavailable`, non-numeric, or pointed at the wrong entity
+all mean **absent**, never zero. A dependency that briefly restarts must not
+tank the score, so the pillar is dropped and the other three renormalise over
+their own weight sum. The entity id is an option, because users rename things.
 
 ## Installation
 
