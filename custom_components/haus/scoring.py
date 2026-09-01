@@ -10,6 +10,7 @@ import math
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 from .const import (
     ADVANCED_FEATURES,
@@ -219,6 +220,21 @@ def score_diversity(signals: DiversitySignals) -> float:
     return min(100.0, 50.0 * evenness(counted) + 50.0 * coverage)
 
 
+def diversity_details(signals: DiversitySignals) -> dict[str, Any]:
+    """Return the diversity facts worth putting on a card.
+
+    The set difference is the useful half: knowing which groups have nothing in
+    them is actionable in a way the score alone is not.
+    """
+    covered = covered_groups(signals)
+    counted = {group: signals.group_counts[group] for group in covered}
+    return {
+        "groups_covered": sorted(covered),
+        "groups_missing": sorted(missing_groups(signals)),
+        "evenness": round(evenness(counted), 3),
+    }
+
+
 def effective_weights(*, hygiene_available: bool) -> dict[str, float]:
     """Return the pillar weights actually in force.
 
@@ -284,10 +300,13 @@ class ScoreResult:
     effective_weights: dict[str, float]
     haghs_available: bool
     metrics: dict[str, dict[str, float]]
+    details: dict[str, dict[str, Any]]
 
 
 def build_result(
-    pillars: PillarScores, metrics: dict[str, dict[str, float]] | None = None
+    pillars: PillarScores,
+    metrics: dict[str, dict[str, float]] | None = None,
+    details: dict[str, dict[str, Any]] | None = None,
 ) -> ScoreResult:
     """Assemble the full published result for a set of pillar scores.
 
@@ -304,4 +323,5 @@ def build_result(
         effective_weights=effective_weights(hygiene_available=hygiene_available),
         haghs_available=hygiene_available,
         metrics=metrics or {},
+        details=details or {},
     )

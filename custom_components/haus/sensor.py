@@ -27,6 +27,7 @@ async def async_setup_entry(
         [
             HausScoreSensor(coordinator, entry),
             HausPillarSensor(coordinator, entry, pillar="usage", name="Usage"),
+            HausPillarSensor(coordinator, entry, pillar="diversity", name="Diversity"),
         ]
     )
 
@@ -105,5 +106,10 @@ class HausPillarSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the metrics that make up this pillar."""
-        return {"metrics": self.coordinator.data.metrics.get(self._pillar, {})}
+        """Return the metrics and facts that make up this pillar."""
+        result = self.coordinator.data
+        attributes: dict[str, Any] = dict(result.details.get(self._pillar, {}))
+        metrics = result.metrics.get(self._pillar)
+        if metrics:
+            attributes["metrics"] = metrics
+        return attributes

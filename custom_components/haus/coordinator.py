@@ -9,12 +9,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .collectors import collect_usage
+from .collectors import collect_diversity, collect_usage
 from .const import DOMAIN, UPDATE_INTERVAL_MINUTES
 from .scoring import (
     PillarScores,
     ScoreResult,
     build_result,
+    diversity_details,
+    score_diversity,
     score_usage,
     usage_metrics,
 )
@@ -54,12 +56,14 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
             notification_count=self.store.notifications_in_window(now),
             notification_history_days=self.store.history_days(now),
         )
+        diversity_signals = collect_diversity(self.hass)
         return build_result(
             PillarScores(
                 hygiene=None,
                 usage=score_usage(usage_signals),
-                diversity=0.0,
+                diversity=score_diversity(diversity_signals),
                 users=0.0,
             ),
             metrics={"usage": usage_metrics(usage_signals)},
+            details={"diversity": diversity_details(diversity_signals)},
         )

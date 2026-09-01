@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.haus.const import DOMAIN
+from custom_components.haus.const import DIVERSITY_GROUPS, DOMAIN, TARGET_GROUPS
 
 
 async def _setup(hass: HomeAssistant) -> MockConfigEntry:
@@ -117,3 +117,45 @@ async def test_the_pillar_sensor_shares_the_score_sensors_device(
     assert score is not None
     assert usage is not None
     assert score.device_id == usage.device_id
+
+
+async def test_diversity_sensor_is_created(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The diversity pillar is graphable in its own right too."""
+    await _setup(hass)
+
+    state = hass.states.get("sensor.haus_diversity")
+
+    assert state is not None
+    assert 0.0 <= float(state.state) <= 100.0
+
+
+async def test_diversity_sensor_names_the_groups_with_nothing_in_them(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The missing-groups set is the most useful thing on the card."""
+    MockConfigEntry(domain="hue").add_to_hass(hass)
+    MockConfigEntry(domain="nest").add_to_hass(hass)
+    await _setup(hass)
+
+    attributes = hass.states.get("sensor.haus_diversity").attributes
+
+    assert attributes["groups_covered"] == ["climate", "lighting"]
+    assert "vacuum" in attributes["groups_missing"]
+    assert len(attributes["groups_missing"]) == len(DIVERSITY_GROUPS) - 2
+    assert 0.0 <= attributes["evenness"] <= 1.0
+
+
+async def test_diversity_reaches_the_score_sensor(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """A broad instance scores above a bare one on the headline number."""
+    for domain in sorted(DIVERSITY_GROUPS)[:TARGET_GROUPS]:
+        MockConfigEntry(domain="hue" if domain == "lighting" else domain).add_to_hass(
+            hass
+        )
+    MockConfigEntry(domain="nest").add_to_hass(hass)
+    await _setup(hass)
+
+    assert float(hass.states.get("sensor.haus_diversity").state) > 0.0
