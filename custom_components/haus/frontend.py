@@ -42,9 +42,22 @@ async def async_register(hass: HomeAssistant) -> None:
     # The path must be a *directory*: Home Assistant mounts a static route
     # only when os.path.isdir() holds, and silently registers nothing when
     # handed a file, which leaves the card 404ing with no error anywhere.
+    www = integration.file_path / "www"
+    if not (www / CARD_FILENAME).is_file():
+        _LOGGER.error(
+            "The bundled card %s is missing from %s, so the dashboard card will "
+            "not be available. The sensors still work. This usually means the "
+            "download was incomplete: reinstall HAUS, or copy the whole "
+            "custom_components/haus directory including its www folder",
+            CARD_FILENAME,
+            www,
+        )
+        return
+
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(URL_BASE, str(integration.file_path / "www"), False)]
+        [StaticPathConfig(URL_BASE, str(www), False)]
     )
+    _LOGGER.info("Serving the HAUS card from %s at %s/", www, URL_BASE)
 
     await async_register_resource(hass)
 

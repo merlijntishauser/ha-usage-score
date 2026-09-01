@@ -204,3 +204,53 @@ async def test_the_card_is_actually_reachable_over_http(
 
     assert response.status == 200
     assert "customElements.define" in await response.text()
+
+
+async def test_a_missing_card_file_is_reported_loudly(
+    hass: HomeAssistant,
+    enable_custom_integrations: None,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """A silent 404 is what made the last card bug hard to find.
+
+    If the built artifact did not make it onto disk - a partial HACS download,
+    a manual copy that missed www/ - say so, with the path, rather than
+    registering a route that serves nothing.
+    """
+    assert await async_setup_component(hass, "http", {})
+    _lovelace(hass, MODE_STORAGE)
+    integration = MagicMock()
+    integration.file_path = tmp_path
+    integration.version = "0.1.0"
+
+    with (
+        patch(
+            "custom_components.haus.frontend.async_get_integration",
+            AsyncMock(return_value=integration),
+        ),
+        caplog.at_level(logging.ERROR),
+    ):
+        await _setup(hass)
+
+    assert CARD_FILENAME in caplog.text
+    assert str(tmp_path) in caplog.text
+
+
+async def test_setup_still_succeeds_when_the_card_file_is_missing(
+    hass: HomeAssistant, enable_custom_integrations: None, tmp_path: Path
+) -> None:
+    """The sensors are the point; a missing card must not take them down."""
+    assert await async_setup_component(hass, "http", {})
+    _lovelace(hass, MODE_STORAGE)
+    integration = MagicMock()
+    integration.file_path = tmp_path
+    integration.version = "0.1.0"
+
+    with patch(
+        "custom_components.haus.frontend.async_get_integration",
+        AsyncMock(return_value=integration),
+    ):
+        await _setup(hass)
+
+    assert hass.states.get("sensor.haus_score") is not None
