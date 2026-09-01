@@ -458,3 +458,12 @@ DEFAULT_EXPOSE_PER_USER_DETAIL = False
 # Websocket command the household detail card calls. Admin-checked, and only
 # answered when the instance has opted in to per-user detail.
 WS_TYPE_USER_ACTIVITY = "haus/user_activity"
+
+# HAGHS measures whether an instance is healthy; HAUS measures whether it is
+# being used, and consumes the hygiene pillar from it rather than recomputing
+# it. Detection is by loaded config entry, so installing HAGHS later makes the
+# pillar appear without touching HAUS's own configuration. There is
+# deliberately no manifest dependency: HAUS must set up cleanly without it.
+HAGHS_DOMAIN = "haghs"
+CONF_HAGHS_ENTITY_ID = "haghs_entity_id"
+DEFAULT_HAGHS_ENTITY_ID = "sensor.haghs_global_score"

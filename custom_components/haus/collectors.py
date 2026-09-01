@@ -8,6 +8,7 @@ nothing that blocks the event loop.
 from datetime import datetime, timedelta
 
 from homeassistant.config_entries import SOURCE_IGNORE
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -17,9 +18,12 @@ from .const import (
     ATTR_LAST_TRIGGERED,
     AUTOMATION_DOMAIN,
     DOMAIN,
+    HAGHS_DOMAIN,
     HELPER_DOMAINS,
     MOBILE_APP_DOMAIN,
     SCENE_DOMAIN,
+    SCORE_MAX,
+    SCORE_MIN,
     SCRIPT_DOMAIN,
     STOCK_ZONE_ENTITY_IDS,
     TEMPLATE_PLATFORM,
@@ -160,3 +164,25 @@ async def collect_users(hass: HomeAssistant) -> UsersSignals:
         active_accounts=active_accounts,
         mobile_app_devices=len(hass.config_entries.async_entries(MOBILE_APP_DOMAIN)),
     )
+
+
+def collect_hygiene(hass: HomeAssistant, entity_id: str) -> float | None:
+    """Read the hygiene pillar from HAGHS, or return None if it is absent.
+
+    None means "no hygiene pillar", which the scoring renormalises around. It
+    never means zero: a dependency that is restarting, has not produced a value
+    yet, or has been pointed at the wrong entity must not tank the score.
+    """
+    if not hass.config_entries.async_loaded_entries(HAGHS_DOMAIN):
+        return None
+
+    state = hass.states.get(entity_id)
+    if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+        return None
+
+    try:
+        score = float(state.state)
+    except ValueError:
+        return None
+
+    return max(float(SCORE_MIN), min(float(SCORE_MAX), score))
