@@ -200,3 +200,26 @@ def test_a_small_active_instance_beats_a_large_idle_one() -> None:
 def test_fire_rate_is_undefined_rather_than_zero_without_automations() -> None:
     """No automations means nothing to divide by; that must not crash."""
     assert score_usage(UsageSignals(automations_defined=0, automations_fired=0)) == 0.0
+
+
+def test_having_scripts_and_scenes_at_all_beats_having_none() -> None:
+    """Presence is worth something, even before they are used."""
+    none = UsageSignals(automations_defined=10)
+    some = UsageSignals(automations_defined=10, scripts_defined=5, scenes_defined=5)
+
+    assert score_usage(some) > score_usage(none)
+
+
+def test_scripts_and_scenes_that_run_beat_ones_that_never_do() -> None:
+    """The same rule as automations: firing is the signal."""
+    idle = UsageSignals(scripts_defined=10, scenes_defined=10)
+    used = UsageSignals(
+        scripts_defined=10, scripts_run=10, scenes_defined=10, scenes_activated=10
+    )
+
+    assert score_usage(used) > score_usage(idle)
+
+
+def test_scripts_and_scenes_absent_does_not_divide_by_zero() -> None:
+    """An instance with neither must collect and score cleanly."""
+    assert score_usage(UsageSignals(automations_defined=5)) >= 0.0

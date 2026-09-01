@@ -60,6 +60,7 @@ UPDATE_INTERVAL_MINUTES = 5
 USAGE_METRIC_WEIGHTS: dict[str, float] = {
     "fire_rate": 0.30,
     "automation_count": 0.15,
+    "scripts_scenes": 0.15,
 }
 
 # The window over which "did this actually get used" is judged, in days. Thirty
@@ -69,3 +70,11 @@ USAGE_WINDOW_DAYS = 30
 
 # Attribute automations carry with the time they last ran.
 ATTR_LAST_TRIGGERED = "last_triggered"
+
+# Knee for the combined script and scene count. Ten between them is a house
+# with a few one-touch routines, which is the behaviour this rewards.
+K_SCRIPT_SCENE_COUNT = 10.0
+
+# Entity domains for scripts and scenes.
+SCRIPT_DOMAIN = "script"
+SCENE_DOMAIN = "scene"

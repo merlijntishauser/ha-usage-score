@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from .const import (
     K_AUTOMATION_COUNT,
+    K_SCRIPT_SCENE_COUNT,
     PILLAR_WEIGHTS,
     SCORE_MAX,
     SCORE_MIN,
@@ -54,6 +55,10 @@ class UsageSignals:
 
     automations_defined: int = 0
     automations_fired: int = 0
+    scripts_defined: int = 0
+    scripts_run: int = 0
+    scenes_defined: int = 0
+    scenes_activated: int = 0
 
 
 def _fire_rate(signals: UsageSignals) -> float:
@@ -68,6 +73,22 @@ def _fire_rate(signals: UsageSignals) -> float:
     return 100.0 * fired / signals.automations_defined
 
 
+def _script_scene_score(signals: UsageSignals) -> float:
+    """Score scripts and scenes on both presence and use.
+
+    Half the metric is having any one-touch routines at all, half is whether
+    they get run. An instance with neither scores zero rather than dividing by
+    zero.
+    """
+    defined = signals.scripts_defined + signals.scenes_defined
+    if defined == 0:
+        return 0.0
+    used = min(signals.scripts_run + signals.scenes_activated, defined)
+    presence = saturate(defined, k=K_SCRIPT_SCENE_COUNT)
+    rate = 100.0 * used / defined
+    return 0.5 * presence + 0.5 * rate
+
+
 def score_usage(signals: UsageSignals) -> float:
     """Return the usage pillar score, 0-100.
 
@@ -77,6 +98,7 @@ def score_usage(signals: UsageSignals) -> float:
     metrics = {
         "fire_rate": _fire_rate(signals),
         "automation_count": saturate(signals.automations_defined, k=K_AUTOMATION_COUNT),
+        "scripts_scenes": _script_scene_score(signals),
     }
     weight_total = sum(USAGE_METRIC_WEIGHTS[name] for name in metrics)
     weighted = sum(
