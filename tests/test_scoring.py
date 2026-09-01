@@ -11,12 +11,14 @@ from custom_components.haus.const import (
     OTHER_GROUP,
     TARGET_GROUPS,
     USAGE_METRIC_WEIGHTS,
+    USERS_METRIC_WEIGHTS,
 )
 from custom_components.haus.scoring import (
     DiversitySignals,
     PillarScores,
     ScoreResult,
     UsageSignals,
+    UsersSignals,
     build_result,
     compute_score,
     covered_groups,
@@ -29,8 +31,10 @@ from custom_components.haus.scoring import (
     saturate,
     score_diversity,
     score_usage,
+    score_users,
     tier_for_score,
     usage_metrics,
+    users_metrics,
 )
 
 
@@ -468,3 +472,62 @@ def test_covering_the_target_saturates_the_coverage_half() -> None:
     )
 
     assert score_diversity(beyond) == score_diversity(at_target)
+
+
+def test_users_pillar_is_zero_for_an_instance_with_no_accounts() -> None:
+    """No accounts is not a household, and must not divide by zero."""
+    assert score_users(UsersSignals()) == 0.0
+
+
+def test_a_household_scores_above_a_one_person_hobby() -> None:
+    """A home only its builder can operate is a hobby."""
+    builder_only = UsersSignals(active_accounts=1)
+    household = UsersSignals(active_accounts=3)
+
+    assert score_users(household) > score_users(builder_only)
+
+
+def test_mobile_apps_raise_the_users_pillar() -> None:
+    """An account nobody can reach from their phone is barely an account."""
+    without = UsersSignals(active_accounts=2)
+    with_apps = UsersSignals(active_accounts=2, mobile_app_devices=2)
+
+    assert score_users(with_apps) > score_users(without)
+
+
+def test_accounts_that_do_things_beat_accounts_that_exist() -> None:
+    """The same rule as everywhere else: use, not presence."""
+    dormant = UsersSignals(active_accounts=3)
+    busy = UsersSignals(active_accounts=3, users_active_7d=3, users_active_30d=3)
+
+    assert score_users(busy) > score_users(dormant)
+
+
+def test_recent_activity_counts_for_more_than_stale_activity() -> None:
+    """Someone who used it this week is operating the house now."""
+    this_week = UsersSignals(active_accounts=2, users_active_7d=2, users_active_30d=2)
+    last_month = UsersSignals(active_accounts=2, users_active_7d=0, users_active_30d=2)
+
+    assert score_users(this_week) > score_users(last_month)
+
+
+def test_users_pillar_stays_within_bounds() -> None:
+    """More devices than accounts must not push the pillar off scale."""
+    lopsided = UsersSignals(
+        active_accounts=1,
+        mobile_app_devices=25,
+        users_active_7d=9,
+        users_active_30d=9,
+    )
+
+    assert 0.0 <= score_users(lopsided) <= 100.0
+
+
+def test_every_users_weight_has_a_metric_behind_it() -> None:
+    """A weight with no metric would silently distort the mean."""
+    assert set(users_metrics(UsersSignals())) == set(USERS_METRIC_WEIGHTS)
+
+
+def test_users_weights_are_a_full_split() -> None:
+    """The metric weights divide the pillar, not part of it."""
+    assert sum(USERS_METRIC_WEIGHTS.values()) == pytest.approx(1.0)

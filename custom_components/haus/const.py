@@ -425,3 +425,18 @@ DOMAIN_GROUPS: dict[str, str] = {
     "worldclock": "tools",
     "sun": "tools",
 }
+
+# Composition of the users pillar. Accounts carry the most: a home only its
+# builder can operate is a hobby, and everything else here is a refinement of
+# that. Recent activity is worth more than sustained activity because it says
+# the house is being operated now, not that it once was.
+USERS_METRIC_WEIGHTS: dict[str, float] = {
+    "accounts": 0.35,
+    "mobile_apps": 0.20,
+    "activity_7d": 0.25,
+    "activity_30d": 0.20,
+}
+
+# Knee for the count of usable accounts. Two is the point of the pillar - a
+# second person who can operate the house - so k=2 puts the 63% mark there.
+K_ACTIVE_ACCOUNTS = 2.0

@@ -16,6 +16,7 @@ from .const import (
     ADVANCED_FEATURES,
     DIVERSITY_GROUPS,
     DOMAIN_GROUPS,
+    K_ACTIVE_ACCOUNTS,
     K_AUTOMATION_COUNT,
     K_HELPER_COUNT,
     K_NOTIFICATION_COUNT,
@@ -29,6 +30,7 @@ from .const import (
     SCORE_TIERS,
     TARGET_GROUPS,
     USAGE_METRIC_WEIGHTS,
+    USERS_METRIC_WEIGHTS,
 )
 
 
@@ -181,6 +183,56 @@ def evenness(group_counts: Mapping[str, int]) -> float:
     total = sum(present)
     entropy = -sum((count / total) * math.log(count / total) for count in present)
     return entropy / math.log(groups)
+
+
+@dataclass(frozen=True)
+class UsersSignals:
+    """Who can operate this house, and whether they do.
+
+    Aggregate counts only. Per-user detail never reaches this module, and never
+    reaches a state attribute.
+    """
+
+    active_accounts: int = 0
+    mobile_app_devices: int = 0
+    users_active_7d: int = 0
+    users_active_30d: int = 0
+
+
+def _share_of_accounts(count: int, active_accounts: int) -> float:
+    """Return a count as a share of the usable accounts, 0-100.
+
+    Capped at 100: someone with three phones is not three people.
+    """
+    if active_accounts == 0:
+        return 0.0
+    return 100.0 * min(count, active_accounts) / active_accounts
+
+
+def users_metrics(signals: UsersSignals) -> dict[str, float]:
+    """Return each users metric's own 0-100 score."""
+    return {
+        "accounts": saturate(signals.active_accounts, k=K_ACTIVE_ACCOUNTS),
+        "mobile_apps": _share_of_accounts(
+            signals.mobile_app_devices, signals.active_accounts
+        ),
+        "activity_7d": _share_of_accounts(
+            signals.users_active_7d, signals.active_accounts
+        ),
+        "activity_30d": _share_of_accounts(
+            signals.users_active_30d, signals.active_accounts
+        ),
+    }
+
+
+def score_users(signals: UsersSignals) -> float:
+    """Return the users pillar score, 0-100."""
+    metrics = users_metrics(signals)
+    weight_total = sum(USERS_METRIC_WEIGHTS[name] for name in metrics)
+    weighted = sum(
+        USERS_METRIC_WEIGHTS[name] * value for name, value in metrics.items()
+    )
+    return weighted / weight_total
 
 
 @dataclass(frozen=True)
