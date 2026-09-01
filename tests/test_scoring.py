@@ -5,8 +5,11 @@ import math
 import pytest
 
 from custom_components.haus.const import (
+    ACTIVITY_RECENT_DAYS,
+    ACTIVITY_SUSTAINED_DAYS,
     DIVERSITY_GROUPS,
     DOMAIN_GROUPS,
+    NEUTRAL_METRIC_SCORE,
     NOTIFY_MIN_HISTORY_DAYS,
     OTHER_GROUP,
     TARGET_GROUPS,
@@ -474,9 +477,11 @@ def test_covering_the_target_saturates_the_coverage_half() -> None:
     assert score_diversity(beyond) == score_diversity(at_target)
 
 
-def test_users_pillar_is_zero_for_an_instance_with_no_accounts() -> None:
+def test_users_pillar_is_zero_for_an_empty_established_instance() -> None:
     """No accounts is not a household, and must not divide by zero."""
-    assert score_users(UsersSignals()) == 0.0
+    established = UsersSignals(activity_history_days=ACTIVITY_SUSTAINED_DAYS)
+
+    assert score_users(established) == 0.0
 
 
 def test_a_household_scores_above_a_one_person_hobby() -> None:
@@ -497,16 +502,33 @@ def test_mobile_apps_raise_the_users_pillar() -> None:
 
 def test_accounts_that_do_things_beat_accounts_that_exist() -> None:
     """The same rule as everywhere else: use, not presence."""
-    dormant = UsersSignals(active_accounts=3)
-    busy = UsersSignals(active_accounts=3, users_active_7d=3, users_active_30d=3)
+    dormant = UsersSignals(
+        active_accounts=3, activity_history_days=ACTIVITY_SUSTAINED_DAYS
+    )
+    busy = UsersSignals(
+        active_accounts=3,
+        users_active_7d=3,
+        users_active_30d=3,
+        activity_history_days=ACTIVITY_SUSTAINED_DAYS,
+    )
 
     assert score_users(busy) > score_users(dormant)
 
 
 def test_recent_activity_counts_for_more_than_stale_activity() -> None:
     """Someone who used it this week is operating the house now."""
-    this_week = UsersSignals(active_accounts=2, users_active_7d=2, users_active_30d=2)
-    last_month = UsersSignals(active_accounts=2, users_active_7d=0, users_active_30d=2)
+    this_week = UsersSignals(
+        active_accounts=2,
+        users_active_7d=2,
+        users_active_30d=2,
+        activity_history_days=ACTIVITY_SUSTAINED_DAYS,
+    )
+    last_month = UsersSignals(
+        active_accounts=2,
+        users_active_7d=0,
+        users_active_30d=2,
+        activity_history_days=ACTIVITY_SUSTAINED_DAYS,
+    )
 
     assert score_users(this_week) > score_users(last_month)
 
@@ -518,6 +540,7 @@ def test_users_pillar_stays_within_bounds() -> None:
         mobile_app_devices=25,
         users_active_7d=9,
         users_active_30d=9,
+        activity_history_days=ACTIVITY_SUSTAINED_DAYS,
     )
 
     assert 0.0 <= score_users(lopsided) <= 100.0
@@ -531,3 +554,49 @@ def test_every_users_weight_has_a_metric_behind_it() -> None:
 def test_users_weights_are_a_full_split() -> None:
     """The metric weights divide the pillar, not part of it."""
     assert sum(USERS_METRIC_WEIGHTS.values()) == pytest.approx(1.0)
+
+
+def test_activity_stays_neutral_until_the_tally_covers_its_window() -> None:
+    """A fresh install has no activity history, and did not earn a zero.
+
+    The tally starts when HAUS does, so on day one nobody has "done nothing" -
+    there has simply been no time to watch. Scoring that as zero punishes a new
+    install for a counter that has not run yet.
+    """
+    fresh = UsersSignals(active_accounts=3, activity_history_days=0)
+    established_silent = UsersSignals(
+        active_accounts=3, activity_history_days=ACTIVITY_SUSTAINED_DAYS
+    )
+
+    assert score_users(fresh) > score_users(established_silent)
+
+
+def test_each_activity_window_waits_for_its_own_history() -> None:
+    """Judging a thirty-day window on ten days of data would be a guess."""
+    ten_days = UsersSignals(
+        active_accounts=2,
+        users_active_7d=2,
+        users_active_30d=2,
+        activity_history_days=ACTIVITY_RECENT_DAYS + 3,
+    )
+
+    metrics = users_metrics(ten_days)
+
+    assert metrics["activity_7d"] == 100.0
+    assert metrics["activity_30d"] == NEUTRAL_METRIC_SCORE
+
+
+def test_activity_counts_for_real_once_the_history_is_long_enough() -> None:
+    """Past the threshold the real tally drives the metric, neutral is gone."""
+    busy = UsersSignals(
+        active_accounts=2,
+        users_active_7d=2,
+        users_active_30d=2,
+        activity_history_days=ACTIVITY_SUSTAINED_DAYS,
+    )
+    silent = UsersSignals(
+        active_accounts=2, activity_history_days=ACTIVITY_SUSTAINED_DAYS
+    )
+
+    assert users_metrics(busy)["activity_30d"] == 100.0
+    assert users_metrics(silent)["activity_30d"] == 0.0

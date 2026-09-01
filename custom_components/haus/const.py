@@ -479,3 +479,14 @@ SCORE_HISTORY_WEEKS = 12
 # integration serves and registers the card itself.
 URL_BASE = "/haus"
 CARD_FILENAME = "haus-card.js"
+
+# Household activity is tallied from the moment HAUS starts watching, so a
+# fresh install has no history at all. Scoring that as "nobody did anything"
+# punishes a new install for a counter that has not had time to run, the same
+# trap the notification tally avoids. Each activity metric therefore sits at
+# the neutral score until the tally covers its own window: judging a thirty-day
+# window on ten days of data would be a guess dressed up as a measurement.
+ACTIVITY_MIN_HISTORY_DAYS: dict[str, int] = {
+    "activity_7d": ACTIVITY_RECENT_DAYS,
+    "activity_30d": ACTIVITY_SUSTAINED_DAYS,
+}

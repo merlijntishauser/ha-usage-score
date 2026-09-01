@@ -87,6 +87,7 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
             users_active_30d=self.store.users_active_within(
                 ACTIVITY_SUSTAINED_DAYS, now
             ),
+            activity_history_days=self.store.history_days(now),
         )
         result = build_result(
             PillarScores(

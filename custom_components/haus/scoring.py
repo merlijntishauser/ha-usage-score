@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .const import (
+    ACTIVITY_MIN_HISTORY_DAYS,
     ADVANCED_FEATURES,
     DIVERSITY_GROUPS,
     DOMAIN_GROUPS,
@@ -197,6 +198,7 @@ class UsersSignals:
     mobile_app_devices: int = 0
     users_active_7d: int = 0
     users_active_30d: int = 0
+    activity_history_days: int = 0
 
 
 def _share_of_accounts(count: int, active_accounts: int) -> float:
@@ -209,6 +211,13 @@ def _share_of_accounts(count: int, active_accounts: int) -> float:
     return 100.0 * min(count, active_accounts) / active_accounts
 
 
+def _activity_score(signals: UsersSignals, metric: str, active_users: int) -> float:
+    """Score one activity window, or stay neutral while its tally is young."""
+    if signals.activity_history_days < ACTIVITY_MIN_HISTORY_DAYS[metric]:
+        return NEUTRAL_METRIC_SCORE
+    return _share_of_accounts(active_users, signals.active_accounts)
+
+
 def users_metrics(signals: UsersSignals) -> dict[str, float]:
     """Return each users metric's own 0-100 score."""
     return {
@@ -216,11 +225,9 @@ def users_metrics(signals: UsersSignals) -> dict[str, float]:
         "mobile_apps": _share_of_accounts(
             signals.mobile_app_devices, signals.active_accounts
         ),
-        "activity_7d": _share_of_accounts(
-            signals.users_active_7d, signals.active_accounts
-        ),
-        "activity_30d": _share_of_accounts(
-            signals.users_active_30d, signals.active_accounts
+        "activity_7d": _activity_score(signals, "activity_7d", signals.users_active_7d),
+        "activity_30d": _activity_score(
+            signals, "activity_30d", signals.users_active_30d
         ),
     }
 
