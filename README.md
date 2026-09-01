@@ -29,17 +29,16 @@ Under construction, built in vertical slices.
 | --- | --- |
 | M0 - walking skeleton: config flow, coordinator, `sensor.haus_score` | done |
 | M1 - usage pillar, with the notify tally | done |
-| M2 - diversity pillar and the missing-groups set | next |
-| M3 - users pillar, aggregate only | |
+| M2 - diversity pillar and the missing-groups set | done |
+| M3 - users pillar, aggregate only | next |
 | M4 - hygiene pillar consumed from HAGHS | |
 | M5 - the bundled `haus-card`, hero and degraded states | |
 | M6 - breakdown, detail cards, badge and tile | |
 | M7 - community percentile, opt-in and off by default | |
 | M8 - docs, HACS default submission, brands PR | |
 
-Today `sensor.haus_score` and `sensor.haus_usage` are computed from the usage
-pillar alone, through the same renormalised path an instance without HAGHS will
-use for good.
+Today `sensor.haus_score` is computed from the usage and diversity pillars,
+through the same renormalised path an instance without HAGHS will use for good.
 
 ### The usage pillar
 
@@ -63,17 +62,38 @@ install is not punished for a counter that has not had time to run. History
 runs from when HAUS started watching, not from the first notification, so a
 quiet house still leaves the neutral start behind.
 
-**Open question - blueprints.** The brief lists "blueprints in use" as an
-advanced feature. Whether an automation was built from a blueprint cannot be
-told from the entity registry or from state; it means reading configuration off
-disk. The collectors deliberately do neither, so this signal is not currently
-counted and the metric is a share of the other three.
+**Blueprints are deliberately not counted.** Whether an automation was built
+from a blueprint cannot be told from the entity registry or from state; it means
+reading configuration off disk, which the collectors do not do. The metric is a
+share of the other three.
 
 ## What it does not do
 
 - It does not recompute hygiene. That is HAGHS's job.
 - It is not a config linter. `thewatchman` and `ha-config-auditor` do that.
 - No cloud service, no account, no telemetry. Nothing leaves the instance.
+
+### The diversity pillar
+
+Forty Hue bulbs is one integration, not forty. Config entries are reduced to
+their domains and mapped onto 27 curated **domain groups** - lighting, climate,
+energy, media, network, protocols, presence, security, alarm, camera, doorbell,
+lock, covers, vacuum, irrigation, weather, air quality, calendar, voice, notify,
+sensors, appliance, transport, health, printer, storage, tools. An integration
+nobody has mapped falls into `other`, which never crashes and never counts as
+breadth.
+
+The score is half **evenness** - the normalised Shannon entropy `H / ln(k)` over
+the groups present, so one dominant group scores badly - and half **coverage**,
+the share of a twelve-group target that has anything in it. A single group has
+nothing to spread across, so its evenness is zero rather than a division by
+zero.
+
+`sensor.haus_diversity` carries `groups_covered`, `groups_missing` and
+`evenness`. The missing set is the useful half: it says what to go and add.
+
+HAUS does not count itself, and entries the user has ignored or disabled do not
+count as in use.
 
 ## Installation
 
