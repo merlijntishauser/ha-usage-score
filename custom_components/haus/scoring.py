@@ -12,6 +12,17 @@ from dataclasses import dataclass
 from .const import PILLAR_WEIGHTS, SCORE_MAX, SCORE_MIN, SCORE_TIERS
 
 
+def saturate(count: int, k: float) -> float:
+    """Return a 0-100 score that rises steeply then flattens.
+
+    `100 * (1 - exp(-n / k))`. A linear ratio against a target would punish a
+    small home forever; a saturating curve gives early additions real weight and
+    stops rewarding hoarding. `k` is the knee, and lives in `const.py` per
+    metric.
+    """
+    return 100.0 * (1.0 - math.exp(-count / k))
+
+
 @dataclass(frozen=True)
 class PillarScores:
     """The four pillar scores, each on a 0-100 scale.
