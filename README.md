@@ -109,10 +109,11 @@ user behind it is an automation firing, not a person, and does not count.
 
 **Privacy.** Per-user counts stay in the `Store` and are never published as
 entity attributes; only aggregates reach the sensors, and a test asserts that
-across every entity HAUS publishes. Seeing the per-account breakdown is opt-in
-through the options flow, defaults off, and even then it is served to
-administrators on request rather than written into state. Nothing leaves the
-instance either way.
+across every entity HAUS publishes. The per-account breakdown is served by a
+websocket command, `haus/user_activity`, which requires administrator rights
+*and* the per-user detail option, which is off by default. With the option off
+the command refuses rather than returning an empty list, so the refusal is
+legible. Nothing leaves the instance either way.
 
 ## Installation
 
