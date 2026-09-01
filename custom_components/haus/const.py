@@ -61,3 +61,11 @@ USAGE_METRIC_WEIGHTS: dict[str, float] = {
     "fire_rate": 0.30,
     "automation_count": 0.15,
 }
+
+# The window over which "did this actually get used" is judged, in days. Thirty
+# days covers seasonal-ish routines without letting a rule that ran once in
+# spring count as current use.
+USAGE_WINDOW_DAYS = 30
+
+# Attribute automations carry with the time they last ran.
+ATTR_LAST_TRIGGERED = "last_triggered"
