@@ -136,3 +136,47 @@ async def test_activity_survives_a_restart(
     await reloaded.async_load()
 
     assert reloaded.users_active_within(7, now) == 1
+
+
+async def test_per_user_action_counts_are_available_for_the_detail_card(
+    hass: HomeAssistant,
+) -> None:
+    """Kept per user so an admin can ask; never published as an attribute."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_action("alice", now)
+    store.record_action("alice", now)
+    store.record_action("bob", now)
+
+    assert store.user_action_counts(7, now) == {"alice": 2, "bob": 1}
+
+
+async def test_per_user_counts_respect_the_window(hass: HomeAssistant) -> None:
+    """The same rolling window as everything else."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_action("alice", now)
+    store.record_action("bob", now - timedelta(days=20))
+
+    assert store.user_action_counts(7, now) == {"alice": 1}
+    assert store.user_action_counts(30, now) == {"alice": 1, "bob": 1}
+
+
+async def test_the_last_active_day_is_kept_per_user(hass: HomeAssistant) -> None:
+    """'Last active' is what makes the household card readable."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_action("alice", now - timedelta(days=3))
+    store.record_action("alice", now)
+    store.record_action("bob", now - timedelta(days=5))
+
+    last_active = store.user_last_active()
+
+    assert last_active["alice"] == now.date().isoformat()
+    assert last_active["bob"] == (now - timedelta(days=5)).date().isoformat()

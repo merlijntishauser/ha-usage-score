@@ -93,6 +93,31 @@ class HausStore:
                 active.update(by_user)
         return len(active)
 
+    def user_action_counts(self, days: int, now: datetime) -> dict[str, int]:
+        """Return per-user action totals inside the last `days`.
+
+        Only the household detail card uses this, over an admin-checked
+        websocket command and only when the user has opted in. It never reaches
+        a state attribute.
+        """
+        cutoff = (now - timedelta(days=days)).date()
+        totals: dict[str, int] = {}
+        for day, by_user in self._actions_by_day.items():
+            if date.fromisoformat(day) <= cutoff:
+                continue
+            for user_id, count in by_user.items():
+                totals[user_id] = totals.get(user_id, 0) + count
+        return totals
+
+    def user_last_active(self) -> dict[str, str]:
+        """Return the most recent day each user acted, as an ISO date."""
+        latest: dict[str, str] = {}
+        for day, by_user in self._actions_by_day.items():
+            for user_id in by_user:
+                if user_id not in latest or day > latest[user_id]:
+                    latest[user_id] = day
+        return latest
+
     def _prune(self, now: datetime) -> None:
         """Drop days that have fallen out of the rolling window."""
         cutoff = (now - timedelta(days=USAGE_WINDOW_DAYS)).date()
