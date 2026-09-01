@@ -71,3 +71,34 @@ async def test_an_unparseable_last_triggered_is_treated_as_never_fired(
     await hass.async_block_till_done()
 
     assert collect_usage(hass).automations_fired == 0
+
+
+async def test_scripts_are_counted_and_dated_from_last_triggered(
+    hass: HomeAssistant,
+) -> None:
+    """Scripts carry the same attribute automations do."""
+    now = dt_util.utcnow()
+    hass.states.async_set(
+        "script.bedtime", "off", {"last_triggered": now - timedelta(days=2)}
+    )
+    hass.states.async_set("script.never_used", "off", {"last_triggered": None})
+    await hass.async_block_till_done()
+
+    signals = collect_usage(hass)
+
+    assert signals.scripts_defined == 2
+    assert signals.scripts_run == 1
+
+
+async def test_scenes_are_dated_from_their_state(hass: HomeAssistant) -> None:
+    """A scene's state is the timestamp it was last activated, not on/off."""
+    now = dt_util.utcnow()
+    hass.states.async_set("scene.movie_night", (now - timedelta(days=3)).isoformat())
+    hass.states.async_set("scene.stale", (now - timedelta(days=200)).isoformat())
+    hass.states.async_set("scene.never_activated", "unknown")
+    await hass.async_block_till_done()
+
+    signals = collect_usage(hass)
+
+    assert signals.scenes_defined == 3
+    assert signals.scenes_activated == 1

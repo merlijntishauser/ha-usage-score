@@ -10,7 +10,13 @@ from datetime import datetime, timedelta
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .const import ATTR_LAST_TRIGGERED, AUTOMATION_DOMAIN, USAGE_WINDOW_DAYS
+from .const import (
+    ATTR_LAST_TRIGGERED,
+    AUTOMATION_DOMAIN,
+    SCENE_DOMAIN,
+    SCRIPT_DOMAIN,
+    USAGE_WINDOW_DAYS,
+)
 from .scoring import UsageSignals
 
 
@@ -29,21 +35,48 @@ def _as_datetime(value: object) -> datetime | None:
     return None
 
 
-def collect_usage(hass: HomeAssistant) -> UsageSignals:
-    """Collect the usage signals from the current instance state."""
-    cutoff = dt_util.utcnow() - timedelta(days=USAGE_WINDOW_DAYS)
-    entity_ids = hass.states.async_entity_ids(AUTOMATION_DOMAIN)
+def _count_recent(
+    hass: HomeAssistant,
+    domain: str,
+    cutoff: datetime,
+    *,
+    from_state: bool = False,
+) -> tuple[int, int]:
+    """Return (defined, used-in-window) for one entity domain.
 
-    fired = 0
+    Automations and scripts date themselves with a `last_triggered` attribute.
+    A scene has no such attribute: its state *is* the timestamp it was last
+    activated, so `from_state` reads it from there instead.
+    """
+    entity_ids = hass.states.async_entity_ids(domain)
+    used = 0
     for entity_id in entity_ids:
         state = hass.states.get(entity_id)
         if state is None:
             continue
-        last_triggered = _as_datetime(state.attributes.get(ATTR_LAST_TRIGGERED))
-        if last_triggered is not None and last_triggered >= cutoff:
-            fired += 1
+        raw = state.state if from_state else state.attributes.get(ATTR_LAST_TRIGGERED)
+        last_used = _as_datetime(raw)
+        if last_used is not None and last_used >= cutoff:
+            used += 1
+    return len(entity_ids), used
+
+
+def collect_usage(hass: HomeAssistant) -> UsageSignals:
+    """Collect the usage signals from the current instance state."""
+    cutoff = dt_util.utcnow() - timedelta(days=USAGE_WINDOW_DAYS)
+    automations_defined, automations_fired = _count_recent(
+        hass, AUTOMATION_DOMAIN, cutoff
+    )
+    scripts_defined, scripts_run = _count_recent(hass, SCRIPT_DOMAIN, cutoff)
+    scenes_defined, scenes_activated = _count_recent(
+        hass, SCENE_DOMAIN, cutoff, from_state=True
+    )
 
     return UsageSignals(
-        automations_defined=len(entity_ids),
-        automations_fired=fired,
+        automations_defined=automations_defined,
+        automations_fired=automations_fired,
+        scripts_defined=scripts_defined,
+        scripts_run=scripts_run,
+        scenes_defined=scenes_defined,
+        scenes_activated=scenes_activated,
     )
