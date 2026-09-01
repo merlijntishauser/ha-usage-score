@@ -159,6 +159,18 @@ def effective_weights(*, hygiene_available: bool) -> dict[str, float]:
     return {name: w / owned_total for name, w in owned.items()}
 
 
+def pillar_values(pillars: PillarScores) -> dict[str, float]:
+    """Return the pillar scores, in canonical order, omitting absent ones."""
+    values: dict[str, float] = {
+        "usage": pillars.usage,
+        "diversity": pillars.diversity,
+        "users": pillars.users,
+    }
+    if pillars.hygiene is not None:
+        values["hygiene"] = pillars.hygiene
+    return {name: values[name] for name in PILLAR_WEIGHTS if name in values}
+
+
 def pillar_contributions(pillars: PillarScores) -> dict[str, float]:
     """Return the points each pillar actually contributed to the score.
 
@@ -167,15 +179,8 @@ def pillar_contributions(pillars: PillarScores) -> dict[str, float]:
     canonical pillar order; an absent hygiene pillar is simply not present.
     """
     weights = effective_weights(hygiene_available=pillars.hygiene is not None)
-    values: dict[str, float] = {
-        "usage": pillars.usage,
-        "diversity": pillars.diversity,
-        "users": pillars.users,
-    }
-    if pillars.hygiene is not None:
-        values["hygiene"] = pillars.hygiene
     return {
-        name: weights[name] * values[name] for name in PILLAR_WEIGHTS if name in values
+        name: weights[name] * value for name, value in pillar_values(pillars).items()
     }
 
 
@@ -204,10 +209,17 @@ class ScoreResult:
     contributions: dict[str, float]
     effective_weights: dict[str, float]
     haghs_available: bool
+    metrics: dict[str, dict[str, float]]
 
 
-def build_result(pillars: PillarScores) -> ScoreResult:
-    """Assemble the full published result for a set of pillar scores."""
+def build_result(
+    pillars: PillarScores, metrics: dict[str, dict[str, float]] | None = None
+) -> ScoreResult:
+    """Assemble the full published result for a set of pillar scores.
+
+    `metrics` carries each pillar's own breakdown, so the card can open the
+    score up rather than asserting it.
+    """
     score = compute_score(pillars)
     hygiene_available = pillars.hygiene is not None
     return ScoreResult(
@@ -217,4 +229,5 @@ def build_result(pillars: PillarScores) -> ScoreResult:
         contributions=pillar_contributions(pillars),
         effective_weights=effective_weights(hygiene_available=hygiene_available),
         haghs_available=hygiene_available,
+        metrics=metrics or {},
     )

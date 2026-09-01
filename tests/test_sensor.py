@@ -1,6 +1,7 @@
 """Tests for the HAUS score sensor and its coordinator wiring."""
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.haus.const import DOMAIN
@@ -77,3 +78,42 @@ async def test_entry_reloads_without_a_restart(
     await hass.async_block_till_done()
 
     assert hass.states.get("sensor.haus_score") is not None
+
+
+async def test_usage_pillar_sensor_is_created(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The owned pillars are published separately so they can be graphed."""
+    await _setup(hass)
+
+    state = hass.states.get("sensor.haus_usage")
+
+    assert state is not None
+    assert 0.0 <= float(state.state) <= 100.0
+
+
+async def test_usage_sensor_exposes_the_metrics_behind_it(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The pillar must be openable, not just readable."""
+    await _setup(hass)
+
+    metrics = hass.states.get("sensor.haus_usage").attributes["metrics"]
+
+    assert "fire_rate" in metrics
+    assert "notifications" in metrics
+
+
+async def test_the_pillar_sensor_shares_the_score_sensors_device(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """All four entities live on one HAUS service device."""
+    await _setup(hass)
+    registry = er.async_get(hass)
+
+    score = registry.async_get("sensor.haus_score")
+    usage = registry.async_get("sensor.haus_usage")
+
+    assert score is not None
+    assert usage is not None
+    assert score.device_id == usage.device_id

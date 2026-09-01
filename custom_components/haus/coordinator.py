@@ -11,7 +11,13 @@ from homeassistant.util import dt as dt_util
 
 from .collectors import collect_usage
 from .const import DOMAIN, UPDATE_INTERVAL_MINUTES
-from .scoring import PillarScores, ScoreResult, build_result, score_usage
+from .scoring import (
+    PillarScores,
+    ScoreResult,
+    build_result,
+    score_usage,
+    usage_metrics,
+)
 from .store import HausStore
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,5 +60,6 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
                 usage=score_usage(usage_signals),
                 diversity=0.0,
                 users=0.0,
-            )
+            ),
+            metrics={"usage": usage_metrics(usage_signals)},
         )
