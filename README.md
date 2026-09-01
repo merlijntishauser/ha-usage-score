@@ -5,7 +5,7 @@ four pillars.
 
 | Pillar | Weight | Source |
 | --- | --- | --- |
-| Hygiene | 30% | Consumed from [HAGHS](https://github.com/) - never recomputed |
+| Hygiene | 30% | Consumed from [HAGHS](https://github.com/D-N91/home-assistant-global-health-score) - never recomputed |
 | Usage | 30% | Automations that fire, scripts, scenes, helpers, notifications |
 | Diversity | 25% | Breadth of integration domain groups, and their evenness |
 | Users | 15% | Accounts that can operate the house, and their activity |
@@ -17,12 +17,28 @@ When HAGHS is not installed the hygiene pillar is **dropped, not zeroed**: the
 remaining three are renormalised over their own weight sum (0.70), so the score
 stays on a 0-100 scale and stays comparable to itself over time.
 
+HAGHS measures whether an instance is *healthy*. HAUS measures whether it is
+being *used*, and consumes HAGHS for the hygiene pillar rather than competing
+with it. HAUS sets up cleanly whether or not HAGHS is installed.
+
 ## Status
 
-Under construction. M0 (walking skeleton) is complete: config flow, a
-five-minute coordinator, and `sensor.haus_score` computed from the automation
-count. The remaining pillars, the bundled Lovelace card and the community
-percentile land in later milestones.
+Under construction, built in vertical slices.
+
+| Milestone | State |
+| --- | --- |
+| M0 - walking skeleton: config flow, coordinator, `sensor.haus_score` | done |
+| M1 - usage pillar, with the notify tally | next |
+| M2 - diversity pillar and the missing-groups set | |
+| M3 - users pillar, aggregate only | |
+| M4 - hygiene pillar consumed from HAGHS | |
+| M5 - the bundled `haus-card`, hero and degraded states | |
+| M6 - breakdown, detail cards, badge and tile | |
+| M7 - community percentile, opt-in and off by default | |
+| M8 - docs, HACS default submission, brands PR | |
+
+Today `sensor.haus_score` is computed from the automation count alone, through
+the same renormalised path an instance without HAGHS will use for good.
 
 ## What it does not do
 
