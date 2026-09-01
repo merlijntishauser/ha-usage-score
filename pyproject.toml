@@ -39,3 +39,16 @@ files = ["custom_components/haus"]
 mypy_path = "."
 explicit_package_bases = true
 namespace_packages = true
+
+[tool.coverage.run]
+source = ["custom_components/haus"]
+
+[tool.coverage.report]
+# The gate is on the two modules that carry the logic. `__init__.py` is wiring
+# and is deliberately not chased for coverage.
+include = [
+    "custom_components/haus/scoring.py",
+    "custom_components/haus/collectors.py",
+]
+fail_under = 90
+show_missing = true
