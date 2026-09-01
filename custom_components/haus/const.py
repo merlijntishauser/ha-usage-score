@@ -440,3 +440,6 @@ USERS_METRIC_WEIGHTS: dict[str, float] = {
 # Knee for the count of usable accounts. Two is the point of the pillar - a
 # second person who can operate the house - so k=2 puts the 63% mark there.
 K_ACTIVE_ACCOUNTS = 2.0
+
+# Config-entry domain each mobile app registration creates.
+MOBILE_APP_DOMAIN = "mobile_app"

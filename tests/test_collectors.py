@@ -6,9 +6,13 @@ from homeassistant.config_entries import SOURCE_IGNORE, ConfigEntryDisabler
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 
-from custom_components.haus.collectors import collect_diversity, collect_usage
+from custom_components.haus.collectors import (
+    collect_diversity,
+    collect_usage,
+    collect_users,
+)
 from custom_components.haus.const import DOMAIN, OTHER_GROUP
 
 
@@ -204,3 +208,27 @@ async def test_an_unrecognised_integration_lands_in_other(
     MockConfigEntry(domain="some_bespoke_thing").add_to_hass(hass)
 
     assert collect_diversity(hass).group_counts == {OTHER_GROUP: 1}
+
+
+async def test_only_real_active_accounts_are_counted(hass: HomeAssistant) -> None:
+    """System accounts and deactivated ones are not people who use the house."""
+    baseline = (await collect_users(hass)).active_accounts
+    MockUser(name="Alice").add_to_hass(hass)
+    MockUser(name="Bob").add_to_hass(hass)
+    MockUser(name="Supervisor", system_generated=True).add_to_hass(hass)
+    MockUser(name="Former flatmate", is_active=False).add_to_hass(hass)
+
+    signals = await collect_users(hass)
+
+    assert signals.active_accounts == baseline + 2
+
+
+async def test_mobile_app_registrations_are_counted(hass: HomeAssistant) -> None:
+    """An account nobody can reach from their phone is barely an account."""
+    MockConfigEntry(domain="mobile_app", title="Alice iPhone").add_to_hass(hass)
+    MockConfigEntry(domain="mobile_app", title="Bob Pixel").add_to_hass(hass)
+    MockConfigEntry(domain="hue").add_to_hass(hass)
+
+    signals = await collect_users(hass)
+
+    assert signals.mobile_app_devices == 2

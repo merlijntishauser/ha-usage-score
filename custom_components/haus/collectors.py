@@ -18,6 +18,7 @@ from .const import (
     AUTOMATION_DOMAIN,
     DOMAIN,
     HELPER_DOMAINS,
+    MOBILE_APP_DOMAIN,
     SCENE_DOMAIN,
     SCRIPT_DOMAIN,
     STOCK_ZONE_ENTITY_IDS,
@@ -26,7 +27,7 @@ from .const import (
     VOICE_ASSISTANT_DOMAINS,
     ZONE_DOMAIN,
 )
-from .scoring import DiversitySignals, UsageSignals, group_counts
+from .scoring import DiversitySignals, UsageSignals, UsersSignals, group_counts
 
 
 def _as_datetime(value: object) -> datetime | None:
@@ -143,3 +144,19 @@ def collect_diversity(hass: HomeAssistant) -> DiversitySignals:
         and entry.disabled_by is None
     ]
     return DiversitySignals(group_counts=group_counts(domains))
+
+
+async def collect_users(hass: HomeAssistant) -> UsersSignals:
+    """Collect who can operate this house.
+
+    Aggregate counts only. The per-user activity counts live in the store and
+    are merged in by the coordinator; they never pass through here as detail.
+    """
+    users = await hass.auth.async_get_users()
+    active_accounts = sum(
+        1 for user in users if user.is_active and not user.system_generated
+    )
+    return UsersSignals(
+        active_accounts=active_accounts,
+        mobile_app_devices=len(hass.config_entries.async_entries(MOBILE_APP_DOMAIN)),
+    )
