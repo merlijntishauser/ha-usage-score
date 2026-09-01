@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from .const import (
     K_AUTOMATION_COUNT,
+    K_HELPER_COUNT,
     K_SCRIPT_SCENE_COUNT,
     PILLAR_WEIGHTS,
     SCORE_MAX,
@@ -59,6 +60,7 @@ class UsageSignals:
     scripts_run: int = 0
     scenes_defined: int = 0
     scenes_activated: int = 0
+    helper_count: int = 0
 
 
 def _fire_rate(signals: UsageSignals) -> float:
@@ -99,6 +101,7 @@ def score_usage(signals: UsageSignals) -> float:
         "fire_rate": _fire_rate(signals),
         "automation_count": saturate(signals.automations_defined, k=K_AUTOMATION_COUNT),
         "scripts_scenes": _script_scene_score(signals),
+        "helpers": saturate(signals.helper_count, k=K_HELPER_COUNT),
     }
     weight_total = sum(USAGE_METRIC_WEIGHTS[name] for name in metrics)
     weighted = sum(

@@ -223,3 +223,21 @@ def test_scripts_and_scenes_that_run_beat_ones_that_never_do() -> None:
 def test_scripts_and_scenes_absent_does_not_divide_by_zero() -> None:
     """An instance with neither must collect and score cleanly."""
     assert score_usage(UsageSignals(automations_defined=5)) >= 0.0
+
+
+def test_helpers_raise_the_usage_pillar() -> None:
+    """Helpers are the seam between a config and a house someone shaped."""
+    bare = UsageSignals(automations_defined=10)
+    with_helpers = UsageSignals(automations_defined=10, helper_count=12)
+
+    assert score_usage(with_helpers) > score_usage(bare)
+
+
+def test_helper_count_saturates_rather_than_scaling_forever() -> None:
+    """Hoarding helpers stops paying, the way every other count does."""
+    early = score_usage(UsageSignals(helper_count=5)) - score_usage(UsageSignals())
+    late = score_usage(UsageSignals(helper_count=105)) - score_usage(
+        UsageSignals(helper_count=100)
+    )
+
+    assert early > late

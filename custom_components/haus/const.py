@@ -61,6 +61,7 @@ USAGE_METRIC_WEIGHTS: dict[str, float] = {
     "fire_rate": 0.30,
     "automation_count": 0.15,
     "scripts_scenes": 0.15,
+    "helpers": 0.10,
 }
 
 # The window over which "did this actually get used" is judged, in days. Thirty
@@ -78,3 +79,23 @@ K_SCRIPT_SCENE_COUNT = 10.0
 # Entity domains for scripts and scenes.
 SCRIPT_DOMAIN = "script"
 SCENE_DOMAIN = "scene"
+
+# Knee for the helper count. A dozen helpers is a house someone has actually
+# shaped around how they live, rather than one left at defaults.
+K_HELPER_COUNT = 12.0
+
+# Domains that count as helpers. Read from the entity registry rather than from
+# states, so a helper that is currently unavailable still counts as configured.
+HELPER_DOMAINS: frozenset[str] = frozenset(
+    {
+        "input_boolean",
+        "input_button",
+        "input_datetime",
+        "input_number",
+        "input_select",
+        "input_text",
+        "counter",
+        "timer",
+        "schedule",
+    }
+)
