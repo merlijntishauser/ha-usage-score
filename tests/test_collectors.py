@@ -116,3 +116,43 @@ async def test_helpers_are_counted_from_the_entity_registry(
     registry.async_get_or_create("light", "hue", "kitchen_ceiling")
 
     assert collect_usage(hass).helper_count == 3
+
+
+async def test_template_entities_are_recognised(hass: HomeAssistant) -> None:
+    """A template entity is someone doing more than wiring up a device."""
+    er.async_get(hass).async_get_or_create("sensor", "template", "derived_comfort")
+
+    assert "template_entities" in collect_usage(hass).advanced_features
+
+
+async def test_the_stock_home_zone_is_not_evidence_of_anything(
+    hass: HomeAssistant,
+) -> None:
+    """Every install has zone.home; it says nothing about the household."""
+    hass.states.async_set("zone.home", "0")
+    await hass.async_block_till_done()
+
+    assert "zones" not in collect_usage(hass).advanced_features
+
+
+async def test_zones_beyond_home_are_recognised(hass: HomeAssistant) -> None:
+    """A work or school zone means presence is actually being used."""
+    hass.states.async_set("zone.home", "0")
+    hass.states.async_set("zone.work", "0")
+    await hass.async_block_till_done()
+
+    assert "zones" in collect_usage(hass).advanced_features
+
+
+async def test_a_voice_assistant_is_recognised(hass: HomeAssistant) -> None:
+    """Speech entities mean voice is configured, not merely available."""
+    er.async_get(hass).async_get_or_create("stt", "wyoming", "whisper")
+
+    assert "voice_assistant" in collect_usage(hass).advanced_features
+
+
+async def test_a_plain_instance_reports_no_advanced_features(
+    hass: HomeAssistant,
+) -> None:
+    """Absence is reported as an empty set, not a crash."""
+    assert collect_usage(hass).advanced_features == frozenset()

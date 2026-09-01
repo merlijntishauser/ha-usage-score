@@ -12,12 +12,17 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ADVANCED_FEATURES,
     ATTR_LAST_TRIGGERED,
     AUTOMATION_DOMAIN,
     HELPER_DOMAINS,
     SCENE_DOMAIN,
     SCRIPT_DOMAIN,
+    STOCK_ZONE_ENTITY_IDS,
+    TEMPLATE_PLATFORM,
     USAGE_WINDOW_DAYS,
+    VOICE_ASSISTANT_DOMAINS,
+    ZONE_DOMAIN,
 )
 from .scoring import UsageSignals
 
@@ -71,6 +76,33 @@ def _count_helpers(hass: HomeAssistant) -> int:
     )
 
 
+def _collect_advanced_features(hass: HomeAssistant) -> frozenset[str]:
+    """Detect which advanced features this instance actually uses.
+
+    Registry and state reads only. "Blueprints in use" is not here: it cannot
+    be told from either without reading configuration off disk.
+    """
+    registry = er.async_get(hass)
+    entries = list(registry.entities.values())
+    present = set()
+
+    if any(entry.platform == TEMPLATE_PLATFORM for entry in entries):
+        present.add("template_entities")
+
+    extra_zones = [
+        entity_id
+        for entity_id in hass.states.async_entity_ids(ZONE_DOMAIN)
+        if entity_id not in STOCK_ZONE_ENTITY_IDS
+    ]
+    if extra_zones:
+        present.add("zones")
+
+    if any(entry.domain in VOICE_ASSISTANT_DOMAINS for entry in entries):
+        present.add("voice_assistant")
+
+    return frozenset(present & ADVANCED_FEATURES)
+
+
 def collect_usage(hass: HomeAssistant) -> UsageSignals:
     """Collect the usage signals from the current instance state."""
     cutoff = dt_util.utcnow() - timedelta(days=USAGE_WINDOW_DAYS)
@@ -90,4 +122,5 @@ def collect_usage(hass: HomeAssistant) -> UsageSignals:
         scenes_defined=scenes_defined,
         scenes_activated=scenes_activated,
         helper_count=_count_helpers(hass),
+        advanced_features=_collect_advanced_features(hass),
     )
