@@ -454,3 +454,7 @@ ACTIVITY_SUSTAINED_DAYS = 30
 # admin-checked websocket command.
 CONF_EXPOSE_PER_USER_DETAIL = "expose_per_user_detail"
 DEFAULT_EXPOSE_PER_USER_DETAIL = False
+
+# Websocket command the household detail card calls. Admin-checked, and only
+# answered when the instance has opted in to per-user detail.
+WS_TYPE_USER_ACTIVITY = "haus/user_activity"

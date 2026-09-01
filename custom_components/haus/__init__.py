@@ -12,13 +12,21 @@ from homeassistant.core import (
     HomeAssistant,
     callback,
 )
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
 from .const import NOTIFY_DOMAIN
 from .coordinator import HausConfigEntry, HausCoordinator
 from .store import HausStore
+from .websocket import async_register as async_register_websocket
 
 PLATFORMS = [Platform.SENSOR]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the parts of HAUS that exist once, not once per entry."""
+    async_register_websocket(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: HausConfigEntry) -> bool:
