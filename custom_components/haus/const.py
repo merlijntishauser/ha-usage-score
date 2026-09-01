@@ -194,9 +194,13 @@ DIVERSITY_GROUPS: frozenset[str] = frozenset(
 OTHER_GROUP = "other"
 
 # How many groups a well-rounded instance covers. Not the full 27 - nobody has
-# a printer, a vacuum and an irrigation controller - but a house using Home
-# Assistant across a dozen kinds of thing is genuinely broad.
-TARGET_GROUPS = 12
+# a printer, a vacuum and an irrigation controller - but broad enough that the
+# pillar keeps meaning something for a large estate. Raised from 12 because the
+# coverage half saturated too early: a quarter of the score with nothing left to
+# earn is a quarter of the score wasted. Note this still caps for an instance
+# covering 17 or more groups - a target above the largest real estate would be
+# needed to give those headroom too.
+TARGET_GROUPS = 16
 
 # Curated domain to group mapping. Anything absent falls into OTHER_GROUP.
 DOMAIN_GROUPS: dict[str, str] = {
