@@ -2,11 +2,14 @@
 
 from datetime import timedelta
 
+from homeassistant.config_entries import SOURCE_IGNORE, ConfigEntryDisabler
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.haus.collectors import collect_usage
+from custom_components.haus.collectors import collect_diversity, collect_usage
+from custom_components.haus.const import DOMAIN, OTHER_GROUP
 
 
 async def test_collect_usage_counts_only_automation_entities(
@@ -156,3 +159,48 @@ async def test_a_plain_instance_reports_no_advanced_features(
 ) -> None:
     """Absence is reported as an empty set, not a crash."""
     assert collect_usage(hass).advanced_features == frozenset()
+
+
+async def test_config_entries_are_reduced_to_domain_groups(
+    hass: HomeAssistant,
+) -> None:
+    """Two lighting brands are two entries but one kind of thing."""
+    for domain in ("hue", "lifx", "nest"):
+        MockConfigEntry(domain=domain).add_to_hass(hass)
+
+    counts = collect_diversity(hass).group_counts
+
+    assert counts["lighting"] == 2
+    assert counts["climate"] == 1
+
+
+async def test_haus_does_not_count_itself(hass: HomeAssistant) -> None:
+    """Scoring your own presence as breadth would be absurd."""
+    MockConfigEntry(domain=DOMAIN).add_to_hass(hass)
+
+    assert collect_diversity(hass).group_counts == {}
+
+
+async def test_ignored_entries_do_not_count(hass: HomeAssistant) -> None:
+    """An ignored discovery is a thing the user said no to."""
+    MockConfigEntry(domain="hue", source=SOURCE_IGNORE).add_to_hass(hass)
+
+    assert collect_diversity(hass).group_counts == {}
+
+
+async def test_disabled_entries_do_not_count(hass: HomeAssistant) -> None:
+    """A disabled integration is not in use."""
+    MockConfigEntry(domain="hue", disabled_by=ConfigEntryDisabler.USER).add_to_hass(
+        hass
+    )
+
+    assert collect_diversity(hass).group_counts == {}
+
+
+async def test_an_unrecognised_integration_lands_in_other(
+    hass: HomeAssistant,
+) -> None:
+    """Custom integrations must not crash the mapping."""
+    MockConfigEntry(domain="some_bespoke_thing").add_to_hass(hass)
+
+    assert collect_diversity(hass).group_counts == {OTHER_GROUP: 1}

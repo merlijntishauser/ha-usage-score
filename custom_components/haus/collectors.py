@@ -7,6 +7,7 @@ nothing that blocks the event loop.
 
 from datetime import datetime, timedelta
 
+from homeassistant.config_entries import SOURCE_IGNORE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -15,6 +16,7 @@ from .const import (
     ADVANCED_FEATURES,
     ATTR_LAST_TRIGGERED,
     AUTOMATION_DOMAIN,
+    DOMAIN,
     HELPER_DOMAINS,
     SCENE_DOMAIN,
     SCRIPT_DOMAIN,
@@ -24,7 +26,7 @@ from .const import (
     VOICE_ASSISTANT_DOMAINS,
     ZONE_DOMAIN,
 )
-from .scoring import UsageSignals
+from .scoring import DiversitySignals, UsageSignals, group_counts
 
 
 def _as_datetime(value: object) -> datetime | None:
@@ -124,3 +126,20 @@ def collect_usage(hass: HomeAssistant) -> UsageSignals:
         helper_count=_count_helpers(hass),
         advanced_features=_collect_advanced_features(hass),
     )
+
+
+def collect_diversity(hass: HomeAssistant) -> DiversitySignals:
+    """Collect integration breadth from the config entries.
+
+    Config entries rather than entities: forty Hue bulbs are one entry, which
+    is exactly the distinction this pillar exists to make. HAUS does not count
+    itself, and entries the user has ignored or disabled are not in use.
+    """
+    domains = [
+        entry.domain
+        for entry in hass.config_entries.async_entries()
+        if entry.domain != DOMAIN
+        and entry.source != SOURCE_IGNORE
+        and entry.disabled_by is None
+    ]
+    return DiversitySignals(group_counts=group_counts(domains))
