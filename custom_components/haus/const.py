@@ -43,3 +43,7 @@ K_AUTOMATION_COUNT = 12.0
 # homeassistant.components.automation, which would pull the whole component in
 # for the sake of one string.
 AUTOMATION_DOMAIN = "automation"
+
+# Title of the single config entry, and the name of the service device the
+# entities hang off.
+INTEGRATION_TITLE = "HAUS"
