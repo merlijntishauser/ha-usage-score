@@ -20,6 +20,9 @@ import {
   RING_STROKE_WIDTH,
   STUB_CONFIG,
 } from "./const";
+// Importing the editor here guarantees it is registered by the time
+// getConfigElement asks for it: one bundle, one resource, one install.
+import "./haus-card-editor";
 import { nextAction } from "./insights";
 import { ringGeometry } from "./ring";
 import type {
