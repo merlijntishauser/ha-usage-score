@@ -30,15 +30,16 @@ Under construction, built in vertical slices.
 | M0 - walking skeleton: config flow, coordinator, `sensor.haus_score` | done |
 | M1 - usage pillar, with the notify tally | done |
 | M2 - diversity pillar and the missing-groups set | done |
-| M3 - users pillar, aggregate only | next |
-| M4 - hygiene pillar consumed from HAGHS | |
+| M3 - users pillar, aggregate only | done |
+| M4 - hygiene pillar consumed from HAGHS | next |
 | M5 - the bundled `haus-card`, hero and degraded states | |
 | M6 - breakdown, detail cards, badge and tile | |
 | M7 - community percentile, opt-in and off by default | |
 | M8 - docs, HACS default submission, brands PR | |
 
-Today `sensor.haus_score` is computed from the usage and diversity pillars,
-through the same renormalised path an instance without HAGHS will use for good.
+Today `sensor.haus_score` is computed from the three owned pillars - usage,
+diversity and users - through the same renormalised path an instance without
+HAGHS will use for good.
 
 ### The usage pillar
 
@@ -94,6 +95,24 @@ zero.
 
 HAUS does not count itself, and entries the user has ignored or disabled do not
 count as in use.
+
+### The users pillar
+
+A home only its builder can operate is a hobby. Four metrics: how many usable
+accounts exist (system-generated and deactivated ones do not count), how many
+have a mobile app registration, and how many people actually did something in
+the last seven and thirty days.
+
+Activity is tallied the same way notifications are - HAUS listens for state
+changes and attributes each one to the user in its context. A change with no
+user behind it is an automation firing, not a person, and does not count.
+
+**Privacy.** Per-user counts stay in the `Store` and are never published as
+entity attributes; only aggregates reach the sensors, and a test asserts that
+across every entity HAUS publishes. Seeing the per-account breakdown is opt-in
+through the options flow, defaults off, and even then it is served to
+administrators on request rather than written into state. Nothing leaves the
+instance either way.
 
 ## Installation
 
