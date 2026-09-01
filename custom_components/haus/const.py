@@ -16,3 +16,8 @@ PILLAR_WEIGHTS: dict[str, float] = {
     "diversity": 0.25,
     "users": 0.15,
 }
+
+# The published score is always on a 0-100 scale, whatever the pillars do. A
+# pillar that misbehaves must not be able to push the headline number off scale.
+SCORE_MIN = 0
+SCORE_MAX = 100

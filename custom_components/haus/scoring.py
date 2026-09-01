@@ -9,7 +9,7 @@ dataclasses is the job of `collectors.py`.
 import math
 from dataclasses import dataclass
 
-from .const import PILLAR_WEIGHTS
+from .const import PILLAR_WEIGHTS, SCORE_MAX, SCORE_MIN
 
 
 @dataclass(frozen=True)
@@ -30,4 +30,4 @@ def compute_score(pillars: PillarScores) -> int:
         + PILLAR_WEIGHTS["diversity"] * pillars.diversity
         + PILLAR_WEIGHTS["users"] * pillars.users
     )
-    return math.floor(total)
+    return max(SCORE_MIN, min(SCORE_MAX, math.floor(total)))
