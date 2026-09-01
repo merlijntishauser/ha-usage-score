@@ -270,3 +270,30 @@ def test_notifications_count_once_the_history_is_long_enough() -> None:
     )
 
     assert score_usage(busy) > score_usage(quiet)
+
+
+def test_advanced_features_raise_the_usage_pillar() -> None:
+    """Template entities, zones and voice are evidence of going further."""
+    plain = UsageSignals(automations_defined=10)
+    advanced = UsageSignals(
+        automations_defined=10,
+        advanced_features=frozenset({"template_entities", "zones"}),
+    )
+
+    assert score_usage(advanced) > score_usage(plain)
+
+
+def test_each_advanced_feature_adds_to_the_metric() -> None:
+    """The metric is a share of the recognised features, not a flag."""
+    one = UsageSignals(advanced_features=frozenset({"zones"}))
+    two = UsageSignals(advanced_features=frozenset({"zones", "template_entities"}))
+
+    assert score_usage(two) > score_usage(one)
+
+
+def test_unrecognised_features_cannot_inflate_the_score() -> None:
+    """A collector reporting something unknown must not distort the pillar."""
+    none = UsageSignals()
+    bogus = UsageSignals(advanced_features=frozenset({"a", "b", "c", "d", "e"}))
+
+    assert score_usage(bogus) == score_usage(none)

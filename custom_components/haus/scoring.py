@@ -10,6 +10,7 @@ import math
 from dataclasses import dataclass
 
 from .const import (
+    ADVANCED_FEATURES,
     K_AUTOMATION_COUNT,
     K_HELPER_COUNT,
     K_NOTIFICATION_COUNT,
@@ -66,6 +67,7 @@ class UsageSignals:
     helper_count: int = 0
     notification_count: int = 0
     notification_history_days: int = 0
+    advanced_features: frozenset[str] = frozenset()
 
 
 def _fire_rate(signals: UsageSignals) -> float:
@@ -103,6 +105,16 @@ def _notification_score(signals: UsageSignals) -> float:
     return saturate(signals.notification_count, k=K_NOTIFICATION_COUNT)
 
 
+def _advanced_score(signals: UsageSignals) -> float:
+    """Score the share of recognised advanced features that are present.
+
+    Intersected with the recognised set, so a collector reporting something
+    unknown cannot distort the pillar.
+    """
+    present = signals.advanced_features & ADVANCED_FEATURES
+    return 100.0 * len(present) / len(ADVANCED_FEATURES)
+
+
 def score_usage(signals: UsageSignals) -> float:
     """Return the usage pillar score, 0-100.
 
@@ -115,6 +127,7 @@ def score_usage(signals: UsageSignals) -> float:
         "scripts_scenes": _script_scene_score(signals),
         "helpers": saturate(signals.helper_count, k=K_HELPER_COUNT),
         "notifications": _notification_score(signals),
+        "advanced": _advanced_score(signals),
     }
     weight_total = sum(USAGE_METRIC_WEIGHTS[name] for name in metrics)
     weighted = sum(

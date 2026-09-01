@@ -63,6 +63,7 @@ USAGE_METRIC_WEIGHTS: dict[str, float] = {
     "scripts_scenes": 0.15,
     "helpers": 0.10,
     "notifications": 0.15,
+    "advanced": 0.15,
 }
 
 # The window over which "did this actually get used" is judged, in days. Thirty
@@ -126,3 +127,29 @@ STORE_SAVE_DELAY_SECONDS = 60
 
 # Service domain whose calls count as a notification going out.
 NOTIFY_DOMAIN = "notify"
+
+# Advanced features worth recognising, each an equal share of that metric.
+# "Blueprints in use" is deliberately absent: knowing whether an automation was
+# built from a blueprint means reading configuration from disk, which the
+# collectors do not do. See the README for the open question.
+ADVANCED_FEATURES: frozenset[str] = frozenset(
+    {
+        "template_entities",
+        "zones",
+        "voice_assistant",
+    }
+)
+
+# Zones a stock instance already has. `zone.home` exists on every install, so it
+# is not evidence of anything.
+STOCK_ZONE_ENTITY_IDS: frozenset[str] = frozenset({"zone.home"})
+
+ZONE_DOMAIN = "zone"
+
+# Entity registry platform that template helpers and template entities use.
+TEMPLATE_PLATFORM = "template"
+
+# Entity domains that indicate a voice assistant is actually set up.
+VOICE_ASSISTANT_DOMAINS: frozenset[str] = frozenset(
+    {"assist_satellite", "stt", "tts", "wake_word"}
+)
