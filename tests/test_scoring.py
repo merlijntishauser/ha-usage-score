@@ -9,20 +9,25 @@ from custom_components.haus.const import (
     DOMAIN_GROUPS,
     NOTIFY_MIN_HISTORY_DAYS,
     OTHER_GROUP,
+    TARGET_GROUPS,
     USAGE_METRIC_WEIGHTS,
 )
 from custom_components.haus.scoring import (
+    DiversitySignals,
     PillarScores,
     ScoreResult,
     UsageSignals,
     build_result,
     compute_score,
+    covered_groups,
     effective_weights,
     evenness,
     group_counts,
     group_for_domain,
+    missing_groups,
     pillar_contributions,
     saturate,
+    score_diversity,
     score_usage,
     tier_for_score,
     usage_metrics,
@@ -398,3 +403,68 @@ def test_group_counts_collapse_many_domains_into_their_groups() -> None:
 
     assert counts["lighting"] == 2
     assert counts["climate"] == 1
+
+
+def test_diversity_is_zero_for_an_instance_with_nothing_set_up() -> None:
+    """No integrations is no breadth."""
+    assert score_diversity(DiversitySignals()) == 0.0
+
+
+def test_covering_more_groups_raises_diversity() -> None:
+    """Breadth across kinds of thing is what the pillar measures."""
+    narrow = DiversitySignals(group_counts={"lighting": 3, "climate": 3})
+    broad = DiversitySignals(
+        group_counts={"lighting": 3, "climate": 3, "media": 3, "energy": 3}
+    )
+
+    assert score_diversity(broad) > score_diversity(narrow)
+
+
+def test_a_pile_of_one_kind_of_thing_scores_low() -> None:
+    """Forty Hue bulbs is one integration group, and one group is not breadth."""
+    hoard = DiversitySignals(group_counts={"lighting": 40})
+    spread = DiversitySignals(
+        group_counts={"lighting": 2, "climate": 2, "media": 2, "energy": 2}
+    )
+
+    assert score_diversity(spread) > score_diversity(hoard)
+
+
+def test_diversity_is_capped_at_one_hundred() -> None:
+    """Covering everything, evenly, is still only 100."""
+    everything = DiversitySignals(
+        group_counts=dict.fromkeys(sorted(DIVERSITY_GROUPS), 5)
+    )
+
+    assert score_diversity(everything) == 100.0
+
+
+def test_unclassified_integrations_are_not_breadth() -> None:
+    """A pile of unknown custom integrations is not a spread of kinds."""
+    unknown = DiversitySignals(group_counts={OTHER_GROUP: 30})
+
+    assert score_diversity(unknown) == 0.0
+    assert covered_groups(unknown) == frozenset()
+
+
+def test_missing_groups_are_the_ones_with_nothing_in_them() -> None:
+    """The most useful thing on the card, and it costs nothing."""
+    signals = DiversitySignals(group_counts={"lighting": 2, "climate": 1})
+
+    missing = missing_groups(signals)
+
+    assert "lighting" not in missing
+    assert "vacuum" in missing
+    assert missing == DIVERSITY_GROUPS - {"lighting", "climate"}
+
+
+def test_covering_the_target_saturates_the_coverage_half() -> None:
+    """Beyond the target, extra groups stop paying for the coverage half."""
+    at_target = DiversitySignals(
+        group_counts=dict.fromkeys(sorted(DIVERSITY_GROUPS)[:TARGET_GROUPS], 1)
+    )
+    beyond = DiversitySignals(
+        group_counts=dict.fromkeys(sorted(DIVERSITY_GROUPS)[: TARGET_GROUPS + 5], 1)
+    )
+
+    assert score_diversity(beyond) == score_diversity(at_target)

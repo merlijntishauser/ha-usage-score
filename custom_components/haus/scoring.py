@@ -9,10 +9,11 @@ dataclasses is the job of `collectors.py`.
 import math
 from collections import Counter
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .const import (
     ADVANCED_FEATURES,
+    DIVERSITY_GROUPS,
     DOMAIN_GROUPS,
     K_AUTOMATION_COUNT,
     K_HELPER_COUNT,
@@ -25,6 +26,7 @@ from .const import (
     SCORE_MAX,
     SCORE_MIN,
     SCORE_TIERS,
+    TARGET_GROUPS,
     USAGE_METRIC_WEIGHTS,
 )
 
@@ -178,6 +180,43 @@ def evenness(group_counts: Mapping[str, int]) -> float:
     total = sum(present)
     entropy = -sum((count / total) * math.log(count / total) for count in present)
     return entropy / math.log(groups)
+
+
+@dataclass(frozen=True)
+class DiversitySignals:
+    """Integration breadth, as a count of config entries per domain group."""
+
+    group_counts: Mapping[str, int] = field(default_factory=dict)
+
+
+def covered_groups(signals: DiversitySignals) -> frozenset[str]:
+    """Return the recognised groups this instance has something in.
+
+    `other` is excluded deliberately: a pile of integrations nobody can
+    classify is not evidence of breadth across kinds of thing.
+    """
+    return frozenset(
+        group
+        for group, count in signals.group_counts.items()
+        if count > 0 and group in DIVERSITY_GROUPS
+    )
+
+
+def missing_groups(signals: DiversitySignals) -> frozenset[str]:
+    """Return the recognised groups with nothing in them."""
+    return DIVERSITY_GROUPS - covered_groups(signals)
+
+
+def score_diversity(signals: DiversitySignals) -> float:
+    """Return the diversity pillar score, 0-100.
+
+    Half is how evenly the estate is spread over the groups it covers, half is
+    how many of the target groups it covers at all.
+    """
+    covered = covered_groups(signals)
+    counted = {group: signals.group_counts[group] for group in covered}
+    coverage = min(1.0, len(covered) / TARGET_GROUPS)
+    return min(100.0, 50.0 * evenness(counted) + 50.0 * coverage)
 
 
 def effective_weights(*, hygiene_available: bool) -> dict[str, float]:
