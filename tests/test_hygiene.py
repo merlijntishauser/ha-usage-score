@@ -5,12 +5,23 @@ That is HAGHS's job and it is settled. What matters here is detecting HAGHS
 honestly, and treating its absence as absence rather than as a zero.
 """
 
-from homeassistant.config_entries import ConfigEntryState
+import pytest
+from homeassistant.config_entries import (
+    SIGNAL_CONFIG_ENTRY_CHANGED,
+    ConfigEntryChange,
+    ConfigEntryState,
+)
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.haus.collectors import collect_hygiene
-from custom_components.haus.const import DEFAULT_HAGHS_ENTITY_ID, HAGHS_DOMAIN
+from custom_components.haus.const import (
+    CONF_HAGHS_ENTITY_ID,
+    DEFAULT_HAGHS_ENTITY_ID,
+    DOMAIN,
+    HAGHS_DOMAIN,
+)
 
 
 def _install_haghs(hass: HomeAssistant) -> MockConfigEntry:
@@ -94,3 +105,95 @@ async def test_a_disabled_haghs_entry_counts_as_absent(hass: HomeAssistant) -> N
     hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "84")
 
     assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) is None
+
+
+async def _setup_haus(hass: HomeAssistant) -> MockConfigEntry:
+    """Set up HAUS itself and wait for it to settle."""
+    entry = MockConfigEntry(domain=DOMAIN, title="HAUS")
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
+
+
+async def test_the_score_carries_hygiene_when_haghs_is_present(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """All four pillars, with hygiene consumed from its owner."""
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "84")
+    await _setup_haus(hass)
+
+    attributes = hass.states.get("sensor.haus_score").attributes
+
+    assert attributes["haghs_available"] is True
+    assert attributes["pillars"]["hygiene"] == 84.0
+    assert "hygiene" in attributes["effective_weights"]
+
+
+async def test_the_weights_renormalise_when_haghs_is_absent(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Three pillars carrying the whole scale, not 70% of it."""
+    await _setup_haus(hass)
+
+    attributes = hass.states.get("sensor.haus_score").attributes
+
+    assert attributes["haghs_available"] is False
+    assert attributes["pillars"]["hygiene"] is None
+    assert "hygiene" not in attributes["effective_weights"]
+    assert sum(attributes["effective_weights"].values()) == pytest.approx(1.0)
+
+
+async def test_an_unavailable_dependency_scores_better_than_a_zero_one(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Absent is not zero. A restarting HAGHS must not tank the score."""
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "0")
+    entry = await _setup_haus(hass)
+    scored_zero = int(hass.states.get("sensor.haus_score").state)
+
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "unavailable")
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    assert int(hass.states.get("sensor.haus_score").state) > scored_zero
+
+
+async def test_installing_haghs_later_makes_the_pillar_appear(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Without touching HAUS's own configuration."""
+    await _setup_haus(hass)
+    assert hass.states.get("sensor.haus_score").attributes["haghs_available"] is False
+
+    haghs = _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "84")
+    async_dispatcher_send(
+        hass, SIGNAL_CONFIG_ENTRY_CHANGED, ConfigEntryChange.ADDED, haghs
+    )
+    await hass.async_block_till_done()
+
+    assert hass.states.get("sensor.haus_score").attributes["haghs_available"] is True
+
+
+async def test_a_renamed_haghs_entity_is_honoured_end_to_end(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The option is the whole reason it is an option."""
+    _install_haghs(hass)
+    hass.states.async_set("sensor.house_health", "66")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="HAUS",
+        options={CONF_HAGHS_ENTITY_ID: "sensor.house_health"},
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    attributes = hass.states.get("sensor.haus_score").attributes
+
+    assert attributes["haghs_available"] is True
+    assert attributes["pillars"]["hygiene"] == 66.0

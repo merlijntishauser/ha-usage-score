@@ -1,5 +1,10 @@
 """The HAUS integration: a score for how much Home Assistant is being used."""
 
+from homeassistant.config_entries import (
+    SIGNAL_CONFIG_ENTRY_CHANGED,
+    ConfigEntry,
+    ConfigEntryChange,
+)
 from homeassistant.const import (
     ATTR_DOMAIN,
     EVENT_CALL_SERVICE,
@@ -12,10 +17,11 @@ from homeassistant.core import (
     HomeAssistant,
     callback,
 )
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
-from .const import NOTIFY_DOMAIN
+from .const import HAGHS_DOMAIN, NOTIFY_DOMAIN
 from .coordinator import HausConfigEntry, HausCoordinator
 from .store import HausStore
 from .websocket import async_register as async_register_websocket
@@ -65,6 +71,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: HausConfigEntry) -> bool
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    @callback
+    def _config_entries_changed(
+        change: ConfigEntryChange, changed: ConfigEntry
+    ) -> None:
+        """Re-evaluate the hygiene pillar when integrations come and go.
+
+        Installing HAGHS later makes the pillar appear without touching HAUS's
+        own configuration, and removing it makes the score renormalise.
+        """
+        if changed.domain == HAGHS_DOMAIN:
+            entry.async_create_task(hass, coordinator.async_refresh())
+
+    entry.async_on_unload(
+        async_dispatcher_connect(
+            hass, SIGNAL_CONFIG_ENTRY_CHANGED, _config_entries_changed
+        )
+    )
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     return True
 

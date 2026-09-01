@@ -13,7 +13,9 @@ from homeassistant.core import callback
 
 from .const import (
     CONF_EXPOSE_PER_USER_DETAIL,
+    CONF_HAGHS_ENTITY_ID,
     DEFAULT_EXPOSE_PER_USER_DETAIL,
+    DEFAULT_HAGHS_ENTITY_ID,
     DOMAIN,
     INTEGRATION_TITLE,
 )
@@ -60,6 +62,10 @@ class HausOptionsFlow(OptionsFlow):
                         CONF_EXPOSE_PER_USER_DETAIL, DEFAULT_EXPOSE_PER_USER_DETAIL
                     ),
                 ): bool,
+                vol.Optional(
+                    CONF_HAGHS_ENTITY_ID,
+                    default=options.get(CONF_HAGHS_ENTITY_ID, DEFAULT_HAGHS_ENTITY_ID),
+                ): str,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

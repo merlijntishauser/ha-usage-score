@@ -9,10 +9,17 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .collectors import collect_diversity, collect_usage, collect_users
+from .collectors import (
+    collect_diversity,
+    collect_hygiene,
+    collect_usage,
+    collect_users,
+)
 from .const import (
     ACTIVITY_RECENT_DAYS,
     ACTIVITY_SUSTAINED_DAYS,
+    CONF_HAGHS_ENTITY_ID,
+    DEFAULT_HAGHS_ENTITY_ID,
     DOMAIN,
     UPDATE_INTERVAL_MINUTES,
 )
@@ -50,6 +57,16 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
             update_interval=timedelta(minutes=UPDATE_INTERVAL_MINUTES),
         )
 
+    @property
+    def _haghs_entity_id(self) -> str:
+        """Return the entity id to read the hygiene pillar from.
+
+        Read fresh on every refresh rather than cached at setup, so an options
+        change or a later HAGHS install is picked up without touching HAUS.
+        """
+        options = self.config_entry.options if self.config_entry else {}
+        return str(options.get(CONF_HAGHS_ENTITY_ID, DEFAULT_HAGHS_ENTITY_ID))
+
     async def _async_update_data(self) -> ScoreResult:
         """Collect every pillar and assemble the result.
 
@@ -73,7 +90,7 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
         )
         return build_result(
             PillarScores(
-                hygiene=None,
+                hygiene=collect_hygiene(self.hass, self._haghs_entity_id),
                 usage=score_usage(usage_signals),
                 diversity=score_diversity(diversity_signals),
                 users=score_users(users_signals),
