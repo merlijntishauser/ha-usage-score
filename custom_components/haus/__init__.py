@@ -18,11 +18,13 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
 from .const import HAGHS_DOMAIN, NOTIFY_DOMAIN
 from .coordinator import HausConfigEntry, HausCoordinator
+from .frontend import async_register as async_register_frontend
 from .store import HausStore
 from .websocket import async_register as async_register_websocket
 
@@ -32,6 +34,12 @@ PLATFORMS = [Platform.SENSOR]
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the parts of HAUS that exist once, not once per entry."""
     async_register_websocket(hass)
+
+    async def _register_frontend(_: HomeAssistant) -> None:
+        """Serve and register the card once the HTTP stack is up."""
+        await async_register_frontend(hass)
+
+    async_at_started(hass, _register_frontend)
     return True
 
 

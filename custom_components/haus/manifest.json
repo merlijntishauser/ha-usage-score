@@ -1,8 +1,13 @@
 {
   "domain": "haus",
   "name": "HAUS - Home Assistant Usage Score",
-  "codeowners": ["@merlijntishauser"],
+  "codeowners": [
+    "@merlijntishauser"
+  ],
   "config_flow": true,
+  "dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/merlijntishauser/ha-usage-score",
   "integration_type": "service",
   "iot_class": "calculated",

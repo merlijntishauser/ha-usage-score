@@ -473,3 +473,9 @@ DEFAULT_HAGHS_ENTITY_ID = "sensor.haghs_global_score"
 # tallies notifications itself: the recorder may not be there, may exclude
 # these entities, and must not be queried on the event loop.
 SCORE_HISTORY_WEEKS = 12
+
+# The card ships inside the integration, not as a separate HACS plugin: HACS
+# treats a repository as a single category, so users install one thing and the
+# integration serves and registers the card itself.
+URL_BASE = "/haus"
+CARD_FILENAME = "haus-card.js"
