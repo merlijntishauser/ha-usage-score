@@ -1,0 +1,38 @@
+[project]
+name = "ha-usage-score"
+version = "0.1.0"
+description = "HAUS - Home Assistant Usage Score"
+requires-python = ">=3.14"
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "homeassistant",
+    "pytest",
+    "pytest-homeassistant-custom-component",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ANN", "D"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "ANN"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+files = ["custom_components/haus"]
