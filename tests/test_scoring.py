@@ -4,7 +4,13 @@ import math
 
 import pytest
 
-from custom_components.haus.const import NOTIFY_MIN_HISTORY_DAYS, USAGE_METRIC_WEIGHTS
+from custom_components.haus.const import (
+    DIVERSITY_GROUPS,
+    DOMAIN_GROUPS,
+    NOTIFY_MIN_HISTORY_DAYS,
+    OTHER_GROUP,
+    USAGE_METRIC_WEIGHTS,
+)
 from custom_components.haus.scoring import (
     PillarScores,
     ScoreResult,
@@ -13,6 +19,8 @@ from custom_components.haus.scoring import (
     compute_score,
     effective_weights,
     evenness,
+    group_counts,
+    group_for_domain,
     pillar_contributions,
     saturate,
     score_usage,
@@ -362,3 +370,31 @@ def test_empty_groups_do_not_count_towards_evenness() -> None:
     assert evenness({"lighting": 5, "climate": 5, "vacuum": 0}) == evenness(
         {"lighting": 5, "climate": 5}
     )
+
+
+def test_a_known_domain_maps_to_its_group() -> None:
+    """The curated mapping is the whole point of the pillar."""
+    assert group_for_domain("hue") == "lighting"
+
+
+def test_an_unknown_domain_falls_into_other() -> None:
+    """A custom integration nobody has heard of must not crash the mapping."""
+    assert group_for_domain("some_bespoke_thing") == OTHER_GROUP
+
+
+def test_every_mapped_group_is_a_real_group() -> None:
+    """A typo in the mapping would silently invent a group."""
+    assert set(DOMAIN_GROUPS.values()) <= DIVERSITY_GROUPS
+
+
+def test_other_is_not_one_of_the_countable_groups() -> None:
+    """Unknown domains are not breadth; they are unclassified."""
+    assert OTHER_GROUP not in DIVERSITY_GROUPS
+
+
+def test_group_counts_collapse_many_domains_into_their_groups() -> None:
+    """Forty Hue bulbs is one integration; two lighting brands is one group."""
+    counts = group_counts(["hue", "lifx", "nest"])
+
+    assert counts["lighting"] == 2
+    assert counts["climate"] == 1

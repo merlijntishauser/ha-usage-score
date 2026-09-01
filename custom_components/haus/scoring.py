@@ -7,17 +7,20 @@ dataclasses is the job of `collectors.py`.
 """
 
 import math
-from collections.abc import Mapping
+from collections import Counter
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from .const import (
     ADVANCED_FEATURES,
+    DOMAIN_GROUPS,
     K_AUTOMATION_COUNT,
     K_HELPER_COUNT,
     K_NOTIFICATION_COUNT,
     K_SCRIPT_SCENE_COUNT,
     NEUTRAL_METRIC_SCORE,
     NOTIFY_MIN_HISTORY_DAYS,
+    OTHER_GROUP,
     PILLAR_WEIGHTS,
     SCORE_MAX,
     SCORE_MIN,
@@ -144,6 +147,20 @@ def score_usage(signals: UsageSignals) -> float:
         USAGE_METRIC_WEIGHTS[name] * value for name, value in metrics.items()
     )
     return weighted / weight_total
+
+
+def group_for_domain(domain: str) -> str:
+    """Return the domain group a config-entry domain belongs to.
+
+    Anything not in the curated mapping is unclassified rather than an error:
+    custom integrations must never crash the pillar.
+    """
+    return DOMAIN_GROUPS.get(domain, OTHER_GROUP)
+
+
+def group_counts(domains: Iterable[str]) -> dict[str, int]:
+    """Reduce config-entry domains to a count per group."""
+    return dict(Counter(group_for_domain(domain) for domain in domains))
 
 
 def evenness(group_counts: Mapping[str, int]) -> float:
