@@ -9,8 +9,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .collectors import collect_diversity, collect_usage
-from .const import DOMAIN, UPDATE_INTERVAL_MINUTES
+from .collectors import collect_diversity, collect_usage, collect_users
+from .const import (
+    ACTIVITY_RECENT_DAYS,
+    ACTIVITY_SUSTAINED_DAYS,
+    DOMAIN,
+    UPDATE_INTERVAL_MINUTES,
+)
 from .scoring import (
     PillarScores,
     ScoreResult,
@@ -18,7 +23,9 @@ from .scoring import (
     diversity_details,
     score_diversity,
     score_usage,
+    score_users,
     usage_metrics,
+    users_metrics,
 )
 from .store import HausStore
 
@@ -57,13 +64,23 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
             notification_history_days=self.store.history_days(now),
         )
         diversity_signals = collect_diversity(self.hass)
+        users_signals = replace(
+            await collect_users(self.hass),
+            users_active_7d=self.store.users_active_within(ACTIVITY_RECENT_DAYS, now),
+            users_active_30d=self.store.users_active_within(
+                ACTIVITY_SUSTAINED_DAYS, now
+            ),
+        )
         return build_result(
             PillarScores(
                 hygiene=None,
                 usage=score_usage(usage_signals),
                 diversity=score_diversity(diversity_signals),
-                users=0.0,
+                users=score_users(users_signals),
             ),
-            metrics={"usage": usage_metrics(usage_signals)},
+            metrics={
+                "usage": usage_metrics(usage_signals),
+                "users": users_metrics(users_signals),
+            },
             details={"diversity": diversity_details(diversity_signals)},
         )

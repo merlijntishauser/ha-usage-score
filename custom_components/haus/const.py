@@ -443,3 +443,8 @@ K_ACTIVE_ACCOUNTS = 2.0
 
 # Config-entry domain each mobile app registration creates.
 MOBILE_APP_DOMAIN = "mobile_app"
+
+# Two windows for household activity. Seven days says the house is being
+# operated now; thirty says it is operated at all. Both are rolling.
+ACTIVITY_RECENT_DAYS = 7
+ACTIVITY_SUSTAINED_DAYS = 30

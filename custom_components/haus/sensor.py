@@ -28,6 +28,7 @@ async def async_setup_entry(
             HausScoreSensor(coordinator, entry),
             HausPillarSensor(coordinator, entry, pillar="usage", name="Usage"),
             HausPillarSensor(coordinator, entry, pillar="diversity", name="Diversity"),
+            HausPillarSensor(coordinator, entry, pillar="users", name="Users"),
         ]
     )
 

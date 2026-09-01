@@ -1,8 +1,10 @@
 """Tests for the HAUS score sensor and its coordinator wiring."""
 
-from homeassistant.core import HomeAssistant
+import json
+
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 
 from custom_components.haus.const import DIVERSITY_GROUPS, DOMAIN
 
@@ -164,3 +166,67 @@ async def test_diversity_collected_from_config_entries_reaches_the_sensor(
         "network",
     ]
     assert float(state.state) > 0.0
+
+
+async def test_users_sensor_is_created(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The household pillar is published like the others."""
+    await _setup(hass)
+
+    state = hass.states.get("sensor.haus_users")
+
+    assert state is not None
+    assert 0.0 <= float(state.state) <= 100.0
+
+
+async def test_the_users_sensor_exposes_no_per_user_detail(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Privacy is a hard requirement: aggregates only, never a user id."""
+    entry = await _setup(hass)
+    hass.states.async_set(
+        "light.kitchen", "on", context=Context(user_id="alice-user-id")
+    )
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_refresh()
+
+    attributes = hass.states.get("sensor.haus_users").attributes
+
+    assert "alice-user-id" not in json.dumps(dict(attributes), default=str)
+
+
+async def test_no_entity_leaks_a_user_id(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Not just the users sensor: no HAUS entity may carry per-user detail."""
+    entry = await _setup(hass)
+    hass.states.async_set(
+        "light.kitchen", "on", context=Context(user_id="alice-user-id")
+    )
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_refresh()
+
+    haus_states = [
+        hass.states.get(entity_id)
+        for entity_id in hass.states.async_entity_ids("sensor")
+        if entity_id.startswith("sensor.haus_")
+    ]
+
+    assert haus_states
+    for state in haus_states:
+        assert "alice-user-id" not in json.dumps(dict(state.attributes), default=str)
+
+
+async def test_a_second_account_raises_the_users_pillar(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """A home more than one person can operate scores higher."""
+    entry = await _setup(hass)
+    before = float(hass.states.get("sensor.haus_users").state)
+
+    MockUser(name="Flatmate").add_to_hass(hass)
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    assert float(hass.states.get("sensor.haus_users").state) > before
