@@ -6,6 +6,7 @@ resource itself.
 """
 
 import logging
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -20,8 +21,10 @@ from homeassistant.components.lovelace.resources import (
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.haus.const import CARD_FILENAME, DOMAIN, URL_BASE
+from custom_components.haus.frontend import card_resource_url
 
 
 def _lovelace(hass: HomeAssistant, mode: str) -> MagicMock:
@@ -59,10 +62,15 @@ async def _setup(hass: HomeAssistant) -> MockConfigEntry:
     return entry
 
 
-async def test_the_card_is_served_from_the_integration(
+async def test_the_card_is_served_from_a_directory(
     hass: HomeAssistant, enable_custom_integrations: None
 ) -> None:
-    """One install: HACS installs the integration, the integration serves it."""
+    """Home Assistant only mounts a static path that points at a directory.
+
+    `_make_static_resources` checks `os.path.isdir` and registers nothing at
+    all - silently - when the path is a file. Pointing this at the card file
+    itself is why the card 404'd.
+    """
     assert await async_setup_component(hass, "http", {})
     _lovelace(hass, MODE_STORAGE)
 
@@ -73,7 +81,32 @@ async def test_the_card_is_served_from_the_integration(
 
     registered = register.call_args[0][0]
     assert [config.url_path for config in registered] == [URL_BASE]
-    assert registered[0].path.endswith(f"www/{CARD_FILENAME}")
+    mounted = Path(registered[0].path)
+    assert mounted.is_dir(), "a static path that is not a directory mounts nothing"
+    assert (mounted / CARD_FILENAME).is_file()
+
+
+async def test_the_resource_url_resolves_to_a_file_under_the_mounted_path(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The url handed to Lovelace must be reachable at the path that is served.
+
+    Registering a resource and serving a directory are two halves of the same
+    promise; testing them separately is how they came apart.
+    """
+    assert await async_setup_component(hass, "http", {})
+    _lovelace(hass, MODE_STORAGE)
+
+    with patch.object(
+        hass.http, "async_register_static_paths", AsyncMock()
+    ) as register:
+        await _setup(hass)
+
+    mounted = Path(register.call_args[0][0][0].path)
+    served_path = card_resource_url(hass).split("?")[0]
+
+    assert served_path.startswith(f"{URL_BASE}/")
+    assert (mounted / served_path.removeprefix(f"{URL_BASE}/")).is_file()
 
 
 async def test_the_resource_is_registered_once(
@@ -149,3 +182,25 @@ async def test_setup_survives_lovelace_being_absent(
     await _setup(hass)
 
     assert hass.states.get("sensor.haus_score") is not None
+
+
+async def test_the_card_is_actually_reachable_over_http(
+    hass: HomeAssistant,
+    hass_client: ClientSessionGenerator,
+    enable_custom_integrations: None,
+) -> None:
+    """The proof: fetch the url Lovelace was handed and get the card back.
+
+    Every other test here checks how the route was *configured*. This one is
+    the only thing that would have caught a static path that configures
+    cleanly and serves nothing.
+    """
+    assert await async_setup_component(hass, "http", {})
+    _lovelace(hass, MODE_STORAGE)
+    await _setup(hass)
+
+    client = await hass_client()
+    response = await client.get(card_resource_url(hass))
+
+    assert response.status == 200
+    assert "customElements.define" in await response.text()

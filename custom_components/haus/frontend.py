@@ -39,14 +39,11 @@ async def async_register(hass: HomeAssistant) -> None:
     integration = await async_get_integration(hass, DOMAIN)
     hass.data[f"{DOMAIN}_version"] = integration.version or "0"
 
+    # The path must be a *directory*: Home Assistant mounts a static route
+    # only when os.path.isdir() holds, and silently registers nothing when
+    # handed a file, which leaves the card 404ing with no error anywhere.
     await hass.http.async_register_static_paths(
-        [
-            StaticPathConfig(
-                URL_BASE,
-                str(integration.file_path / "www" / CARD_FILENAME),
-                False,
-            )
-        ]
+        [StaticPathConfig(URL_BASE, str(integration.file_path / "www"), False)]
     )
 
     await async_register_resource(hass)
