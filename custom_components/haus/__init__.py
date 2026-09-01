@@ -6,7 +6,12 @@ from homeassistant.const import (
     EVENT_STATE_CHANGED,
     Platform,
 )
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import (
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    callback,
+)
 from homeassistant.util import dt as dt_util
 
 from .const import NOTIFY_DOMAIN
@@ -32,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: HausConfigEntry) -> bool
             store.record_notification(dt_util.utcnow())
 
     @callback
-    def _tally_action(event: Event) -> None:
+    def _tally_action(event: Event[EventStateChangedData]) -> None:
         """Attribute a state change to the person who caused it.
 
         Only changes carrying a user in their context count: an automation
