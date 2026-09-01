@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from custom_components.haus.collectors import collect_usage
@@ -102,3 +103,16 @@ async def test_scenes_are_dated_from_their_state(hass: HomeAssistant) -> None:
 
     assert signals.scenes_defined == 3
     assert signals.scenes_activated == 1
+
+
+async def test_helpers_are_counted_from_the_entity_registry(
+    hass: HomeAssistant,
+) -> None:
+    """Registry, not states: a helper that is unavailable is still configured."""
+    registry = er.async_get(hass)
+    registry.async_get_or_create("input_boolean", "input_boolean", "guest_mode")
+    registry.async_get_or_create("counter", "counter", "coffees")
+    registry.async_get_or_create("schedule", "schedule", "heating")
+    registry.async_get_or_create("light", "hue", "kitchen_ceiling")
+
+    assert collect_usage(hass).helper_count == 3

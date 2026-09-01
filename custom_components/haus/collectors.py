@@ -8,11 +8,13 @@ nothing that blocks the event loop.
 from datetime import datetime, timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_LAST_TRIGGERED,
     AUTOMATION_DOMAIN,
+    HELPER_DOMAINS,
     SCENE_DOMAIN,
     SCRIPT_DOMAIN,
     USAGE_WINDOW_DAYS,
@@ -61,6 +63,14 @@ def _count_recent(
     return len(entity_ids), used
 
 
+def _count_helpers(hass: HomeAssistant) -> int:
+    """Count configured helpers from the entity registry."""
+    registry = er.async_get(hass)
+    return sum(
+        1 for entry in registry.entities.values() if entry.domain in HELPER_DOMAINS
+    )
+
+
 def collect_usage(hass: HomeAssistant) -> UsageSignals:
     """Collect the usage signals from the current instance state."""
     cutoff = dt_util.utcnow() - timedelta(days=USAGE_WINDOW_DAYS)
@@ -79,4 +89,5 @@ def collect_usage(hass: HomeAssistant) -> UsageSignals:
         scripts_run=scripts_run,
         scenes_defined=scenes_defined,
         scenes_activated=scenes_activated,
+        helper_count=_count_helpers(hass),
     )
