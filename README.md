@@ -32,13 +32,12 @@ Under construction, built in vertical slices.
 | M2 - diversity pillar and the missing-groups set | done |
 | M3 - users pillar, aggregate only | done |
 | M4 - hygiene pillar consumed from HAGHS | done |
-| M5 - the bundled `haus-card`, hero and degraded states | next |
-| M6 - breakdown, detail cards, badge and tile | |
+| M5 - the bundled `haus-card`, hero and degraded states | done |
+| M6 - breakdown, detail cards, badge and tile | next |
 | M7 - community percentile, opt-in and off by default | |
 | M8 - docs, HACS default submission, brands PR | |
 
-All four pillars are live. `sensor.haus_score` carries the whole scoring
-model; what remains is the card that draws it.
+All four pillars are live, and the card draws them.
 
 ### The usage pillar
 
@@ -132,6 +131,53 @@ Missing, `unknown`, `unavailable`, non-numeric, or pointed at the wrong entity
 all mean **absent**, never zero. A dependency that briefly restarts must not
 tank the score, so the pillar is dropped and the other three renormalise over
 their own weight sum. The entity id is an option, because users rename things.
+
+## The card
+
+`haus-card` ships **inside** the integration rather than as a separate HACS
+plugin: HACS treats a repository as a single category, so you install one thing.
+The integration serves the built file and registers the Lovelace resource for
+you, updating it in place when the version changes rather than leaving a second
+resource behind. If your Lovelace is in YAML mode it cannot be written to, so
+HAUS logs the exact line to paste instead of failing.
+
+The hero card is a segmented ring whose arc lengths are **the points each pillar
+actually contributed**, not their raw scores - so the gap to a full circle is
+the unearned points, colour-coded by which pillar to go and fix.
+
+The pillar palette is fixed, and deliberately not themed: the colours carry
+meaning, and a theme that recoloured them would destroy it. Everything else -
+surfaces, text, dividers, tracks - uses your theme's variables.
+
+| Pillar | Colour |
+| --- | --- |
+| Hygiene | `#2f6fd0` |
+| Usage | `#0e9384` |
+| Diversity | `#b5750a` |
+| Users | `#c2456e` |
+
+**When HAGHS is absent** the hygiene row stays, drawn as a dashed ghost track
+reading `unavailable`, with the renormalised weights shown and one single-line
+explanation in the footer. A card that silently drops a row teaches people the
+pillar never existed; a card that shouts about a missing dependency gets deleted
+from the dashboard. One nag, maximum.
+
+The footer's sparkline is twelve weekly snapshots that HAUS keeps itself, for
+the same reason it tallies notifications itself: the recorder may be absent, may
+exclude these entities, and must not be queried on the event loop. A fresh
+install says so rather than drawing a flat line.
+
+### Building the card
+
+```sh
+npm ci
+npm test          # vitest, including the ring geometry and both card states
+npm run build     # rollup -> dist/, copied into custom_components/haus/www/
+```
+
+The built artifact is committed. CI rebuilds it and fails if the committed copy
+does not match, so the file users install is always the file the source
+produces.
 
 ## Installation
 

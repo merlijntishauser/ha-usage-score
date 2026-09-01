@@ -43,3 +43,26 @@ jobs:
         run: uv run mypy
       - name: pytest
         run: uv run pytest --cov
+
+  card:
+    name: card build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: typecheck
+        run: npm run typecheck
+      - name: vitest
+        run: npm test
+      - name: build
+        run: npm run build
+      - name: the committed artifact must match a fresh build
+        run: |
+          if ! git diff --exit-code -- custom_components/haus/www/haus-card.js; then
+            echo "::error::custom_components/haus/www/haus-card.js is stale. Run 'npm run build' and commit the result."
+            exit 1
+          fi

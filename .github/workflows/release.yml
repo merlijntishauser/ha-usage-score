@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: build, verify and attach
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: rebuild the card
+        run: npm run build
+
+      - name: the committed artifact must match a fresh build
+        run: |
+          if ! git diff --exit-code -- custom_components/haus/www/haus-card.js; then
+            echo "::error::Released artifact does not match a fresh build of src/."
+            exit 1
+          fi
+
+      - name: stamp the manifest with the release version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          jq --arg v "$VERSION" '.version = $v' custom_components/haus/manifest.json > manifest.tmp
+          mv manifest.tmp custom_components/haus/manifest.json
+          echo "released version: $VERSION"
+
+      - name: zip the integration
+        run: |
+          cd custom_components/haus
+          zip -r ../../haus.zip . -x '__pycache__/*' '*/__pycache__/*'
+
+      - name: attach the zip to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: haus.zip
