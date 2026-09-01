@@ -1,6 +1,9 @@
 {
   "domain": "haus",
   "name": "HAUS - Home Assistant Usage Score",
+  "after_dependencies": [
+    "lovelace"
+  ],
   "codeowners": [
     "@merlijntishauser"
   ],
