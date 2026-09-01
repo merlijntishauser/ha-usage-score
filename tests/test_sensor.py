@@ -4,7 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.haus.const import DIVERSITY_GROUPS, DOMAIN, TARGET_GROUPS
+from custom_components.haus.const import DIVERSITY_GROUPS, DOMAIN
 
 
 async def _setup(hass: HomeAssistant) -> MockConfigEntry:
@@ -147,15 +147,20 @@ async def test_diversity_sensor_names_the_groups_with_nothing_in_them(
     assert 0.0 <= attributes["evenness"] <= 1.0
 
 
-async def test_diversity_reaches_the_score_sensor(
+async def test_diversity_collected_from_config_entries_reaches_the_sensor(
     hass: HomeAssistant, enable_custom_integrations: None
 ) -> None:
-    """A broad instance scores above a bare one on the headline number."""
-    for domain in sorted(DIVERSITY_GROUPS)[:TARGET_GROUPS]:
-        MockConfigEntry(domain="hue" if domain == "lighting" else domain).add_to_hass(
-            hass
-        )
-    MockConfigEntry(domain="nest").add_to_hass(hass)
+    """Four real integrations across four groups, counted as four groups."""
+    for domain in ("hue", "nest", "sonos", "unifi"):
+        MockConfigEntry(domain=domain).add_to_hass(hass)
     await _setup(hass)
 
-    assert float(hass.states.get("sensor.haus_diversity").state) > 0.0
+    state = hass.states.get("sensor.haus_diversity")
+
+    assert state.attributes["groups_covered"] == [
+        "climate",
+        "lighting",
+        "media",
+        "network",
+    ]
+    assert float(state.state) > 0.0
