@@ -28,8 +28,8 @@ Under construction, built in vertical slices.
 | Milestone | State |
 | --- | --- |
 | M0 - walking skeleton: config flow, coordinator, `sensor.haus_score` | done |
-| M1 - usage pillar, with the notify tally | next |
-| M2 - diversity pillar and the missing-groups set | |
+| M1 - usage pillar, with the notify tally | done |
+| M2 - diversity pillar and the missing-groups set | next |
 | M3 - users pillar, aggregate only | |
 | M4 - hygiene pillar consumed from HAGHS | |
 | M5 - the bundled `haus-card`, hero and degraded states | |
@@ -37,8 +37,37 @@ Under construction, built in vertical slices.
 | M7 - community percentile, opt-in and off by default | |
 | M8 - docs, HACS default submission, brands PR | |
 
-Today `sensor.haus_score` is computed from the automation count alone, through
-the same renormalised path an instance without HAGHS will use for good.
+Today `sensor.haus_score` and `sensor.haus_usage` are computed from the usage
+pillar alone, through the same renormalised path an instance without HAGHS will
+use for good.
+
+### The usage pillar
+
+What counts is firing, not existing. Six metrics, weighted, with the fire rate
+carrying the most:
+
+| Metric | What it reads |
+| --- | --- |
+| Fire rate | Share of automations whose `last_triggered` falls in the last 30 days |
+| Automation count | How many are defined, on a saturating curve |
+| Scripts and scenes | Half presence, half whether they get run |
+| Helpers | `input_*`, `counter`, `timer`, `schedule`, from the entity registry |
+| Notifications | `notify` service calls, tallied by HAUS itself |
+| Advanced features | Template entities, zones beyond `zone.home`, a voice assistant |
+
+There is no history for notifications sent without the recorder, and querying
+the recorder on the event loop is not an option, so HAUS listens for
+`EVENT_CALL_SERVICE` and keeps its own rolling 30-day tally in a `Store`. Until
+seven days of that history exist the metric sits at a neutral value: a fresh
+install is not punished for a counter that has not had time to run. History
+runs from when HAUS started watching, not from the first notification, so a
+quiet house still leaves the neutral start behind.
+
+**Open question - blueprints.** The brief lists "blueprints in use" as an
+advanced feature. Whether an automation was built from a blueprint cannot be
+told from the entity registry or from state; it means reading configuration off
+disk. The collectors deliberately do neither, so this signal is not currently
+counted and the metric is a share of the other three.
 
 ## What it does not do
 
