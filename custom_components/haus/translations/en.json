@@ -9,5 +9,18 @@
     "abort": {
       "single_instance_allowed": "HAUS is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HAUS options",
+        "data": {
+          "expose_per_user_detail": "Allow per-user activity detail"
+        },
+        "data_description": {
+          "expose_per_user_detail": "Off by default. When on, an administrator can open the household detail card and see activity counts per account. These counts are never published as entity attributes, and nothing leaves this instance either way."
+        }
+      }
+    }
   }
 }

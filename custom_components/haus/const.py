@@ -448,3 +448,9 @@ MOBILE_APP_DOMAIN = "mobile_app"
 # operated now; thirty says it is operated at all. Both are rolling.
 ACTIVITY_RECENT_DAYS = 7
 ACTIVITY_SUSTAINED_DAYS = 30
+
+# Per-user activity detail is opt-in and defaults off. Even when it is on, the
+# counts are never state attributes: the detail card asks for them over an
+# admin-checked websocket command.
+CONF_EXPOSE_PER_USER_DETAIL = "expose_per_user_detail"
+DEFAULT_EXPOSE_PER_USER_DETAIL = False
