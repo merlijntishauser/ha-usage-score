@@ -15,6 +15,7 @@ from .const import (
     SCORE_MAX,
     SCORE_MIN,
     SCORE_TIERS,
+    USAGE_METRIC_WEIGHTS,
 )
 
 
@@ -47,16 +48,41 @@ class PillarScores:
 class UsageSignals:
     """Raw usage signals collected from the instance.
 
-    What counts is firing, not existing; the metrics that measure that arrive
-    in M1. For now this carries the seed signal only.
+    Every field defaults, so a collector that cannot see a signal yet reports
+    nothing rather than a misleading zero.
     """
 
-    automation_count: int
+    automations_defined: int = 0
+    automations_fired: int = 0
+
+
+def _fire_rate(signals: UsageSignals) -> float:
+    """Return the share of defined automations that fired in the window.
+
+    An instance with no automations has no rate to speak of; it scores zero
+    here rather than dividing by zero.
+    """
+    if signals.automations_defined == 0:
+        return 0.0
+    fired = min(signals.automations_fired, signals.automations_defined)
+    return 100.0 * fired / signals.automations_defined
 
 
 def score_usage(signals: UsageSignals) -> float:
-    """Return the usage pillar score, 0-100."""
-    return saturate(signals.automation_count, k=K_AUTOMATION_COUNT)
+    """Return the usage pillar score, 0-100.
+
+    A weighted mean over the implemented metrics, normalised by the weights
+    actually in play, so adding a metric does not require retuning the others.
+    """
+    metrics = {
+        "fire_rate": _fire_rate(signals),
+        "automation_count": saturate(signals.automations_defined, k=K_AUTOMATION_COUNT),
+    }
+    weight_total = sum(USAGE_METRIC_WEIGHTS[name] for name in metrics)
+    weighted = sum(
+        USAGE_METRIC_WEIGHTS[name] * value for name, value in metrics.items()
+    )
+    return weighted / weight_total
 
 
 def effective_weights(*, hygiene_available: bool) -> dict[str, float]:

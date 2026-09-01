@@ -16,9 +16,9 @@ async def test_collect_usage_counts_only_automation_entities(
 
     signals = collect_usage(hass)
 
-    assert signals.automation_count == 2
+    assert signals.automations_defined == 2
 
 
 async def test_collect_usage_on_an_empty_instance(hass: HomeAssistant) -> None:
     """A fresh instance collects cleanly rather than raising."""
-    assert collect_usage(hass).automation_count == 0
+    assert collect_usage(hass).automations_defined == 0

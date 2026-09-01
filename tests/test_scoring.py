@@ -143,12 +143,12 @@ def test_a_contribution_is_the_pillar_score_times_its_effective_weight() -> None
 
 def test_usage_pillar_is_zero_for_an_instance_with_no_automations() -> None:
     """Nothing defined is nothing used."""
-    assert score_usage(UsageSignals(automation_count=0)) == 0.0
+    assert score_usage(UsageSignals(automations_defined=0)) == 0.0
 
 
-def test_usage_pillar_rises_with_the_automation_count() -> None:
+def test_usage_pillar_rises_with_the_number_of_automations() -> None:
     """More automations never lowers the usage pillar."""
-    scores = [score_usage(UsageSignals(automation_count=n)) for n in range(0, 40)]
+    scores = [score_usage(UsageSignals(automations_defined=n)) for n in range(0, 40)]
 
     assert scores == sorted(scores)
     assert scores[0] < scores[-1]
@@ -156,7 +156,7 @@ def test_usage_pillar_rises_with_the_automation_count() -> None:
 
 def test_usage_pillar_stays_within_bounds() -> None:
     """A pillar is always on the same 0-100 scale as every other pillar."""
-    assert 0.0 <= score_usage(UsageSignals(automation_count=5_000)) <= 100.0
+    assert 0.0 <= score_usage(UsageSignals(automations_defined=5_000)) <= 100.0
 
 
 def test_build_result_assembles_everything_the_sensor_publishes() -> None:
@@ -179,3 +179,24 @@ def test_build_result_reports_hygiene_as_unavailable_when_absent() -> None:
 
     assert result.haghs_available is False
     assert "hygiene" not in result.effective_weights
+
+
+def test_usage_rewards_automations_that_actually_fire() -> None:
+    """Firing is the thing being measured, not defining."""
+    idle = UsageSignals(automations_defined=20, automations_fired=0)
+    active = UsageSignals(automations_defined=20, automations_fired=20)
+
+    assert score_usage(active) > score_usage(idle)
+
+
+def test_a_small_active_instance_beats_a_large_idle_one() -> None:
+    """62 automations that never trigger is not usage."""
+    many_idle = UsageSignals(automations_defined=60, automations_fired=0)
+    few_active = UsageSignals(automations_defined=6, automations_fired=6)
+
+    assert score_usage(few_active) > score_usage(many_idle)
+
+
+def test_fire_rate_is_undefined_rather_than_zero_without_automations() -> None:
+    """No automations means nothing to divide by; that must not crash."""
+    assert score_usage(UsageSignals(automations_defined=0, automations_fired=0)) == 0.0

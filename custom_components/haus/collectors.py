@@ -14,5 +14,5 @@ from .scoring import UsageSignals
 def collect_usage(hass: HomeAssistant) -> UsageSignals:
     """Collect the usage signals from the current instance state."""
     return UsageSignals(
-        automation_count=len(hass.states.async_entity_ids(AUTOMATION_DOMAIN)),
+        automations_defined=len(hass.states.async_entity_ids(AUTOMATION_DOMAIN)),
     )

@@ -52,3 +52,12 @@ INTEGRATION_TITLE = "HAUS"
 # or state read, so this is cheap; five minutes keeps the card feeling live
 # without putting a pointless load on the event loop.
 UPDATE_INTERVAL_MINUTES = 5
+
+# Composition of the usage pillar. Firing is what this pillar claims to
+# measure, so the fire rate carries the most weight and the raw count is only a
+# supporting signal. The pillar is a weighted mean over whichever of these
+# metrics is implemented, so the set grows without retuning the rest.
+USAGE_METRIC_WEIGHTS: dict[str, float] = {
+    "fire_rate": 0.30,
+    "automation_count": 0.15,
+}
