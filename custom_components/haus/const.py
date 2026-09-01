@@ -32,3 +32,9 @@ SCORE_TIERS: tuple[tuple[int, str], ...] = (
     (80, "Power user"),
     (93, "Overengineered"),
 )
+
+# Knee of the saturating curve for the number of automations defined. Around a
+# dozen automations is where an instance stops being a demo, so k=12 puts the
+# 63% mark there and still gives the first few automations real weight. The
+# usage pillar grows further in M1; this is the seed signal.
+K_AUTOMATION_COUNT = 12.0

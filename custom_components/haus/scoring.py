@@ -9,7 +9,13 @@ dataclasses is the job of `collectors.py`.
 import math
 from dataclasses import dataclass
 
-from .const import PILLAR_WEIGHTS, SCORE_MAX, SCORE_MIN, SCORE_TIERS
+from .const import (
+    K_AUTOMATION_COUNT,
+    PILLAR_WEIGHTS,
+    SCORE_MAX,
+    SCORE_MIN,
+    SCORE_TIERS,
+)
 
 
 def saturate(count: int, k: float) -> float:
@@ -35,6 +41,22 @@ class PillarScores:
     usage: float
     diversity: float
     users: float
+
+
+@dataclass(frozen=True)
+class UsageSignals:
+    """Raw usage signals collected from the instance.
+
+    What counts is firing, not existing; the metrics that measure that arrive
+    in M1. For now this carries the seed signal only.
+    """
+
+    automation_count: int
+
+
+def score_usage(signals: UsageSignals) -> float:
+    """Return the usage pillar score, 0-100."""
+    return saturate(signals.automation_count, k=K_AUTOMATION_COUNT)
 
 
 def effective_weights(*, hygiene_available: bool) -> dict[str, float]:

@@ -6,10 +6,12 @@ import pytest
 
 from custom_components.haus.scoring import (
     PillarScores,
+    UsageSignals,
     compute_score,
     effective_weights,
     pillar_contributions,
     saturate,
+    score_usage,
     tier_for_score,
 )
 
@@ -135,3 +137,21 @@ def test_a_contribution_is_the_pillar_score_times_its_effective_weight() -> None
     weight = effective_weights(hygiene_available=True)["usage"]
 
     assert pillar_contributions(pillars)["usage"] == pytest.approx(weight * 70.0)
+
+
+def test_usage_pillar_is_zero_for_an_instance_with_no_automations() -> None:
+    """Nothing defined is nothing used."""
+    assert score_usage(UsageSignals(automation_count=0)) == 0.0
+
+
+def test_usage_pillar_rises_with_the_automation_count() -> None:
+    """More automations never lowers the usage pillar."""
+    scores = [score_usage(UsageSignals(automation_count=n)) for n in range(0, 40)]
+
+    assert scores == sorted(scores)
+    assert scores[0] < scores[-1]
+
+
+def test_usage_pillar_stays_within_bounds() -> None:
+    """A pillar is always on the same 0-100 scale as every other pillar."""
+    assert 0.0 <= score_usage(UsageSignals(automation_count=5_000)) <= 100.0
