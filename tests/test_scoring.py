@@ -34,8 +34,11 @@ def test_hygiene_absent_renormalises_over_the_owned_pillars() -> None:
 
 def test_effective_weights_sum_to_one_with_or_without_hygiene() -> None:
     """Renormalisation keeps the score on the same 0-100 scale either way."""
-    assert sum(effective_weights(hygiene_available=True).values()) == pytest.approx(1.0)
-    assert sum(effective_weights(hygiene_available=False).values()) == pytest.approx(1.0)
+    with_hygiene = sum(effective_weights(hygiene_available=True).values())
+    without_hygiene = sum(effective_weights(hygiene_available=False).values())
+
+    assert with_hygiene == pytest.approx(1.0)
+    assert without_hygiene == pytest.approx(1.0)
 
 
 def test_effective_weights_drop_hygiene_when_it_is_unavailable() -> None:

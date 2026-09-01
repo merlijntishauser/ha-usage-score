@@ -36,3 +36,6 @@ ignore = ["D203", "D213"]
 python_version = "3.14"
 strict = true
 files = ["custom_components/haus"]
+mypy_path = "."
+explicit_package_bases = true
+namespace_packages = true
