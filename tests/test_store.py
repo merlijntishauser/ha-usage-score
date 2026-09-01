@@ -180,3 +180,76 @@ async def test_the_last_active_day_is_kept_per_user(hass: HomeAssistant) -> None
 
     assert last_active["alice"] == now.date().isoformat()
     assert last_active["bob"] == (now - timedelta(days=5)).date().isoformat()
+
+
+async def test_a_weekly_score_snapshot_is_kept_for_the_sparkline(
+    hass: HomeAssistant,
+) -> None:
+    """The card's sparkline needs history, and the recorder is not asked."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_score(71, now)
+
+    assert store.score_history(12) == [{"week": store.week_key(now), "score": 71}]
+
+
+async def test_the_latest_score_in_a_week_is_the_one_kept(
+    hass: HomeAssistant,
+) -> None:
+    """The coordinator runs every five minutes; one point per week is enough."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_score(60, now)
+    store.record_score(71, now)
+
+    assert store.score_history(12) == [{"week": store.week_key(now), "score": 71}]
+
+
+async def test_score_history_is_returned_oldest_first(hass: HomeAssistant) -> None:
+    """A sparkline read right to left would be a lie."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_score(50, now - timedelta(weeks=2))
+    store.record_score(60, now - timedelta(weeks=1))
+    store.record_score(71, now)
+
+    assert [point["score"] for point in store.score_history(12)] == [50, 60, 71]
+
+
+async def test_score_history_keeps_only_the_requested_weeks(
+    hass: HomeAssistant,
+) -> None:
+    """Twelve weeks, not a lifetime archive."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    for week in range(20):
+        store.record_score(week, now - timedelta(weeks=19 - week))
+
+    history = store.score_history(12)
+
+    assert len(history) == 12
+    assert [point["score"] for point in history] == list(range(8, 20))
+
+
+async def test_score_history_survives_a_restart(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """Twelve weeks of history is worthless if a restart clears it."""
+    now = dt_util.utcnow()
+    store = HausStore(hass)
+    await store.async_load()
+    store.record_score(71, now)
+    await store.async_save()
+
+    reloaded = HausStore(hass)
+    await reloaded.async_load()
+
+    assert reloaded.score_history(12) == [{"week": store.week_key(now), "score": 71}]

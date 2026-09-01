@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, INTEGRATION_TITLE
+from .const import DOMAIN, INTEGRATION_TITLE, SCORE_HISTORY_WEEKS
 from .coordinator import HausConfigEntry, HausCoordinator
 from .scoring import pillar_values
 
@@ -71,6 +71,7 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
             },
             "effective_weights": result.effective_weights,
             "contributions": result.contributions,
+            "score_history": self.coordinator.store.score_history(SCORE_HISTORY_WEEKS),
         }
 
 

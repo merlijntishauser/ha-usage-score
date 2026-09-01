@@ -13,6 +13,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    SCORE_HISTORY_WEEKS,
     STORAGE_KEY,
     STORAGE_VERSION,
     STORE_SAVE_DELAY_SECONDS,
@@ -28,6 +29,7 @@ class HausStore:
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._notify_by_day: dict[str, int] = {}
         self._actions_by_day: dict[str, dict[str, int]] = {}
+        self._score_by_week: dict[str, int] = {}
         self._started: date | None = None
 
     async def async_load(self) -> None:
@@ -47,6 +49,10 @@ class HausStore:
                 day: {user: int(count) for user, count in dict(users).items()}
                 for day, users in dict(data.get("actions_by_day", {})).items()
             }
+            self._score_by_week = {
+                week: int(score)
+                for week, score in dict(data.get("score_by_week", {})).items()
+            }
             started = data.get("started")
             self._started = date.fromisoformat(started) if started else None
         if self._started is None:
@@ -58,6 +64,7 @@ class HausStore:
             "started": self._started.isoformat() if self._started else None,
             "notify_by_day": self._notify_by_day,
             "actions_by_day": self._actions_by_day,
+            "score_by_week": self._score_by_week,
         }
 
     async def async_save(self) -> None:
@@ -117,6 +124,31 @@ class HausStore:
                 if user_id not in latest or day > latest[user_id]:
                     latest[user_id] = day
         return latest
+
+    @staticmethod
+    def week_key(when: datetime) -> str:
+        """Return the ISO year-and-week key a moment belongs to."""
+        year, week, _ = when.isocalendar()
+        return f"{year}-W{week:02d}"
+
+    def record_score(self, score: int, when: datetime) -> None:
+        """Snapshot the score for the week it falls in.
+
+        The coordinator runs every five minutes; one point per week is all the
+        sparkline needs, so the latest score in a week is the one kept.
+        """
+        self._score_by_week[self.week_key(when)] = score
+        self._score_by_week = dict(
+            sorted(self._score_by_week.items())[-SCORE_HISTORY_WEEKS:]
+        )
+        self._store.async_delay_save(self._as_dict, STORE_SAVE_DELAY_SECONDS)
+
+    def score_history(self, weeks: int) -> list[dict[str, Any]]:
+        """Return up to `weeks` weekly snapshots, oldest first."""
+        return [
+            {"week": week, "score": score}
+            for week, score in sorted(self._score_by_week.items())[-weeks:]
+        ]
 
     def _prune(self, now: datetime) -> None:
         """Drop days that have fallen out of the rolling window."""

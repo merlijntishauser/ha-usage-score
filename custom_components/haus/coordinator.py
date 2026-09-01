@@ -88,7 +88,7 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
                 ACTIVITY_SUSTAINED_DAYS, now
             ),
         )
-        return build_result(
+        result = build_result(
             PillarScores(
                 hygiene=collect_hygiene(self.hass, self._haghs_entity_id),
                 usage=score_usage(usage_signals),
@@ -101,3 +101,5 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
             },
             details={"diversity": diversity_details(diversity_signals)},
         )
+        self.store.record_score(result.score, now)
+        return result

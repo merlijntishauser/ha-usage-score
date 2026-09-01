@@ -230,3 +230,17 @@ async def test_a_second_account_raises_the_users_pillar(
     await hass.async_block_till_done()
 
     assert float(hass.states.get("sensor.haus_users").state) > before
+
+
+async def test_the_score_sensor_carries_its_weekly_history(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The card's sparkline reads this; the recorder is never asked for it."""
+    await _setup(hass)
+
+    state = hass.states.get("sensor.haus_score")
+    history = state.attributes["score_history"]
+
+    assert len(history) == 1
+    assert history[0]["score"] == int(state.state)
+    assert "week" in history[0]

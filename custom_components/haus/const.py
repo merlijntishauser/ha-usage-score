@@ -467,3 +467,9 @@ WS_TYPE_USER_ACTIVITY = "haus/user_activity"
 HAGHS_DOMAIN = "haghs"
 CONF_HAGHS_ENTITY_ID = "haghs_entity_id"
 DEFAULT_HAGHS_ENTITY_ID = "sensor.haghs_global_score"
+
+# Weeks of score history kept for the card's sparkline. HAUS keeps its own
+# weekly snapshots rather than querying the recorder, for the same reason it
+# tallies notifications itself: the recorder may not be there, may exclude
+# these entities, and must not be queried on the event loop.
+SCORE_HISTORY_WEEKS = 12
