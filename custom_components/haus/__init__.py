@@ -97,6 +97,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: HausConfigEntry) -> bool
             hass, SIGNAL_CONFIG_ENTRY_CHANGED, _config_entries_changed
         )
     )
+
+    async def _recollect_when_started(_: HomeAssistant) -> None:
+        """Collect again once every other component has loaded.
+
+        Home Assistant sets integrations up while others are still loading, so
+        the first collection can see an instance with no automations, scripts
+        or scenes and publish a score that is wrong until the next interval.
+        """
+        await coordinator.async_refresh()
+
+    entry.async_on_unload(async_at_started(hass, _recollect_when_started))
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     return True
 

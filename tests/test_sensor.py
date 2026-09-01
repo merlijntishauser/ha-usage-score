@@ -1,12 +1,14 @@
 """Tests for the HAUS score sensor and its coordinator wiring."""
 
 import json
+from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 
 from custom_components.haus.const import DIVERSITY_GROUPS, DOMAIN
+from custom_components.haus.coordinator import HausCoordinator
 
 
 async def _setup(hass: HomeAssistant) -> MockConfigEntry:
@@ -244,3 +246,21 @@ async def test_the_score_sensor_carries_its_weekly_history(
     assert len(history) == 1
     assert history[0]["score"] == int(state.state)
     assert "week" in history[0]
+
+
+async def test_the_score_is_collected_again_once_home_assistant_has_started(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Entry setup can run before automations and scripts exist.
+
+    Home Assistant sets integrations up while other components are still
+    loading, so the very first collection can see an instance with no
+    automations, no scripts and no scenes, and publish a score that is simply
+    wrong until the next interval. Collect again once everything has loaded.
+    """
+    with patch.object(
+        HausCoordinator, "async_refresh", AsyncMock()
+    ) as refresh_after_start:
+        await _setup(hass)
+
+    refresh_after_start.assert_awaited()
