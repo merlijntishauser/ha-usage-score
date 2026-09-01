@@ -115,13 +115,13 @@ def _advanced_score(signals: UsageSignals) -> float:
     return 100.0 * len(present) / len(ADVANCED_FEATURES)
 
 
-def score_usage(signals: UsageSignals) -> float:
-    """Return the usage pillar score, 0-100.
+def usage_metrics(signals: UsageSignals) -> dict[str, float]:
+    """Return each usage metric's own 0-100 score.
 
-    A weighted mean over the implemented metrics, normalised by the weights
-    actually in play, so adding a metric does not require retuning the others.
+    Exposed so the pillar can be broken down on the card: a score that cannot
+    be taken apart is the "magic number" objection waiting to happen.
     """
-    metrics = {
+    return {
         "fire_rate": _fire_rate(signals),
         "automation_count": saturate(signals.automations_defined, k=K_AUTOMATION_COUNT),
         "scripts_scenes": _script_scene_score(signals),
@@ -129,6 +129,15 @@ def score_usage(signals: UsageSignals) -> float:
         "notifications": _notification_score(signals),
         "advanced": _advanced_score(signals),
     }
+
+
+def score_usage(signals: UsageSignals) -> float:
+    """Return the usage pillar score, 0-100.
+
+    A weighted mean over the implemented metrics, normalised by the weights
+    actually in play, so adding a metric does not require retuning the others.
+    """
+    metrics = usage_metrics(signals)
     weight_total = sum(USAGE_METRIC_WEIGHTS[name] for name in metrics)
     weighted = sum(
         USAGE_METRIC_WEIGHTS[name] * value for name, value in metrics.items()

@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from custom_components.haus.const import NOTIFY_MIN_HISTORY_DAYS
+from custom_components.haus.const import NOTIFY_MIN_HISTORY_DAYS, USAGE_METRIC_WEIGHTS
 from custom_components.haus.scoring import (
     PillarScores,
     ScoreResult,
@@ -16,6 +16,7 @@ from custom_components.haus.scoring import (
     saturate,
     score_usage,
     tier_for_score,
+    usage_metrics,
 )
 
 
@@ -297,3 +298,31 @@ def test_unrecognised_features_cannot_inflate_the_score() -> None:
     bogus = UsageSignals(advanced_features=frozenset({"a", "b", "c", "d", "e"}))
 
     assert score_usage(bogus) == score_usage(none)
+
+
+def test_every_usage_weight_has_a_metric_behind_it() -> None:
+    """A weight with no metric would silently distort the mean."""
+    assert set(usage_metrics(UsageSignals())) == set(USAGE_METRIC_WEIGHTS)
+
+
+def test_usage_weights_are_a_full_split() -> None:
+    """The metric weights are meant to divide the pillar, not part of it."""
+    assert sum(USAGE_METRIC_WEIGHTS.values()) == pytest.approx(1.0)
+
+
+def test_the_usage_pillar_is_the_weighted_mean_of_its_metrics() -> None:
+    """What the breakdown card shows must reconcile with the pillar score."""
+    signals = UsageSignals(
+        automations_defined=10,
+        automations_fired=5,
+        helper_count=3,
+        notification_history_days=30,
+        notification_count=10,
+    )
+    metrics = usage_metrics(signals)
+
+    expected = sum(
+        USAGE_METRIC_WEIGHTS[name] * value for name, value in metrics.items()
+    ) / sum(USAGE_METRIC_WEIGHTS.values())
+
+    assert score_usage(signals) == pytest.approx(expected)
