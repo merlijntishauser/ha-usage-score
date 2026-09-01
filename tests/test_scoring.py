@@ -12,6 +12,7 @@ from custom_components.haus.scoring import (
     build_result,
     compute_score,
     effective_weights,
+    evenness,
     pillar_contributions,
     saturate,
     score_usage,
@@ -326,3 +327,38 @@ def test_the_usage_pillar_is_the_weighted_mean_of_its_metrics() -> None:
     ) / sum(USAGE_METRIC_WEIGHTS.values())
 
     assert score_usage(signals) == pytest.approx(expected)
+
+
+def test_evenness_is_one_when_every_group_is_equally_represented() -> None:
+    """Perfectly spread breadth is the definition of even."""
+    assert evenness({"lighting": 5, "climate": 5, "media": 5, "security": 5}) == 1.0
+
+
+def test_evenness_is_zero_with_only_one_group() -> None:
+    """Forty Hue bulbs is one integration group, and ln(1) is zero."""
+    assert evenness({"lighting": 40}) == 0.0
+
+
+def test_evenness_is_zero_for_an_empty_instance() -> None:
+    """Nothing to spread must not divide by zero either."""
+    assert evenness({}) == 0.0
+
+
+def test_a_lopsided_instance_is_less_even_than_a_balanced_one() -> None:
+    """One dominant group is exactly what this metric is meant to catch."""
+    lopsided = evenness({"lighting": 40, "climate": 1, "media": 1})
+    balanced = evenness({"lighting": 14, "climate": 14, "media": 14})
+
+    assert lopsided < balanced
+
+
+def test_evenness_stays_within_bounds() -> None:
+    """It is a normalised entropy, so it belongs in the unit interval."""
+    assert 0.0 <= evenness({"a": 1, "b": 99, "c": 3, "d": 7}) <= 1.0
+
+
+def test_empty_groups_do_not_count_towards_evenness() -> None:
+    """A group with nothing in it is missing, not present-but-quiet."""
+    assert evenness({"lighting": 5, "climate": 5, "vacuum": 0}) == evenness(
+        {"lighting": 5, "climate": 5}
+    )

@@ -7,6 +7,7 @@ dataclasses is the job of `collectors.py`.
 """
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from .const import (
@@ -143,6 +144,23 @@ def score_usage(signals: UsageSignals) -> float:
         USAGE_METRIC_WEIGHTS[name] * value for name, value in metrics.items()
     )
     return weighted / weight_total
+
+
+def evenness(group_counts: Mapping[str, int]) -> float:
+    """Return the normalised Shannon entropy of the group counts, 0-1.
+
+    `H / ln(k)` over the groups actually present. Forty Hue bulbs is one
+    integration, not forty, and this is the number that says so. A single group
+    has nothing to spread across - `ln(1)` is zero - so evenness is zero rather
+    than a division by zero.
+    """
+    present = [count for count in group_counts.values() if count > 0]
+    groups = len(present)
+    if groups <= 1:
+        return 0.0
+    total = sum(present)
+    entropy = -sum((count / total) * math.log(count / total) for count in present)
+    return entropy / math.log(groups)
 
 
 def effective_weights(*, hygiene_available: bool) -> dict[str, float]:
