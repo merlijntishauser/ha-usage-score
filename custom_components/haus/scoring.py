@@ -12,7 +12,10 @@ from dataclasses import dataclass
 from .const import (
     K_AUTOMATION_COUNT,
     K_HELPER_COUNT,
+    K_NOTIFICATION_COUNT,
     K_SCRIPT_SCENE_COUNT,
+    NEUTRAL_METRIC_SCORE,
+    NOTIFY_MIN_HISTORY_DAYS,
     PILLAR_WEIGHTS,
     SCORE_MAX,
     SCORE_MIN,
@@ -61,6 +64,8 @@ class UsageSignals:
     scenes_defined: int = 0
     scenes_activated: int = 0
     helper_count: int = 0
+    notification_count: int = 0
+    notification_history_days: int = 0
 
 
 def _fire_rate(signals: UsageSignals) -> float:
@@ -91,6 +96,13 @@ def _script_scene_score(signals: UsageSignals) -> float:
     return 0.5 * presence + 0.5 * rate
 
 
+def _notification_score(signals: UsageSignals) -> float:
+    """Score notifications sent, or stay neutral while the tally is young."""
+    if signals.notification_history_days < NOTIFY_MIN_HISTORY_DAYS:
+        return NEUTRAL_METRIC_SCORE
+    return saturate(signals.notification_count, k=K_NOTIFICATION_COUNT)
+
+
 def score_usage(signals: UsageSignals) -> float:
     """Return the usage pillar score, 0-100.
 
@@ -102,6 +114,7 @@ def score_usage(signals: UsageSignals) -> float:
         "automation_count": saturate(signals.automations_defined, k=K_AUTOMATION_COUNT),
         "scripts_scenes": _script_scene_score(signals),
         "helpers": saturate(signals.helper_count, k=K_HELPER_COUNT),
+        "notifications": _notification_score(signals),
     }
     weight_total = sum(USAGE_METRIC_WEIGHTS[name] for name in metrics)
     weighted = sum(

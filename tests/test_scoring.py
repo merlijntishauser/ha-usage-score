@@ -4,6 +4,7 @@ import math
 
 import pytest
 
+from custom_components.haus.const import NOTIFY_MIN_HISTORY_DAYS
 from custom_components.haus.scoring import (
     PillarScores,
     ScoreResult,
@@ -141,9 +142,11 @@ def test_a_contribution_is_the_pillar_score_times_its_effective_weight() -> None
     assert pillar_contributions(pillars)["usage"] == pytest.approx(weight * 70.0)
 
 
-def test_usage_pillar_is_zero_for_an_instance_with_no_automations() -> None:
-    """Nothing defined is nothing used."""
-    assert score_usage(UsageSignals(automations_defined=0)) == 0.0
+def test_usage_pillar_is_zero_for_an_empty_established_instance() -> None:
+    """Nothing defined and nothing sent, once the tally has run, is zero."""
+    established = UsageSignals(automations_defined=0, notification_history_days=30)
+
+    assert score_usage(established) == 0.0
 
 
 def test_usage_pillar_rises_with_the_number_of_automations() -> None:
@@ -199,7 +202,9 @@ def test_a_small_active_instance_beats_a_large_idle_one() -> None:
 
 def test_fire_rate_is_undefined_rather_than_zero_without_automations() -> None:
     """No automations means nothing to divide by; that must not crash."""
-    assert score_usage(UsageSignals(automations_defined=0, automations_fired=0)) == 0.0
+    signals = UsageSignals(automations_defined=0, automations_fired=0)
+
+    assert 0.0 <= score_usage(signals) <= 100.0
 
 
 def test_having_scripts_and_scenes_at_all_beats_having_none() -> None:
@@ -241,3 +246,27 @@ def test_helper_count_saturates_rather_than_scaling_forever() -> None:
     )
 
     assert early > late
+
+
+def test_notifications_stay_neutral_until_there_is_enough_history() -> None:
+    """A fresh install is not punished for a tally that has not run yet."""
+    fresh = UsageSignals(automations_defined=10, notification_history_days=0)
+    silent = UsageSignals(
+        automations_defined=10,
+        notification_history_days=NOTIFY_MIN_HISTORY_DAYS,
+        notification_count=0,
+    )
+
+    assert score_usage(fresh) > score_usage(silent)
+
+
+def test_notifications_count_once_the_history_is_long_enough() -> None:
+    """Past the threshold the real tally drives the metric."""
+    quiet = UsageSignals(
+        notification_history_days=NOTIFY_MIN_HISTORY_DAYS, notification_count=0
+    )
+    busy = UsageSignals(
+        notification_history_days=NOTIFY_MIN_HISTORY_DAYS, notification_count=60
+    )
+
+    assert score_usage(busy) > score_usage(quiet)

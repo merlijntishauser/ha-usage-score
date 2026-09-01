@@ -62,6 +62,7 @@ USAGE_METRIC_WEIGHTS: dict[str, float] = {
     "automation_count": 0.15,
     "scripts_scenes": 0.15,
     "helpers": 0.10,
+    "notifications": 0.15,
 }
 
 # The window over which "did this actually get used" is judged, in days. Thirty
@@ -99,3 +100,17 @@ HELPER_DOMAINS: frozenset[str] = frozenset(
         "schedule",
     }
 )
+
+# Notifications have no history without the recorder, so HAUS keeps its own
+# rolling tally. Until it has this many days of data the metric sits at a
+# neutral value: a fresh install must not be punished for a counter that has
+# not had time to run.
+NOTIFY_MIN_HISTORY_DAYS = 7
+
+# The score a metric takes while it has nothing trustworthy to say. Deliberately
+# mid-scale: neither a reward nor a penalty.
+NEUTRAL_METRIC_SCORE = 50.0
+
+# Knee for notifications sent in the window. Thirty over thirty days is roughly
+# one a day, which is a house that talks back.
+K_NOTIFICATION_COUNT = 30.0

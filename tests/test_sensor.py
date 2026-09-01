@@ -27,13 +27,17 @@ async def test_score_sensor_is_created(
     assert 0 <= int(state.state) <= 100
 
 
-async def test_score_is_zero_on_an_empty_instance(
+async def test_a_fresh_empty_instance_scores_low_but_not_zero(
     hass: HomeAssistant, enable_custom_integrations: None
 ) -> None:
-    """Nothing configured scores nothing, rather than erroring."""
+    """Nothing is configured, but the notification tally has no history yet.
+
+    That metric sits neutral rather than at zero, so a brand new install is not
+    punished for a counter that has not had time to run.
+    """
     await _setup(hass)
 
-    assert hass.states.get("sensor.haus_score").state == "0"
+    assert 0 < int(hass.states.get("sensor.haus_score").state) < 20
 
 
 async def test_score_rises_once_automations_exist(
