@@ -22,6 +22,27 @@ describe("explain", () => {
     expect(explain("groups_covered", { targetGroups: 20 })).toContain("20");
   });
 
+  it("says outright that the comparison is not a percentile", () => {
+    const text = explain("community", {}) ?? "";
+
+    // The disclaimer is the point: means are all Home Assistant publishes,
+    // so a rank is not available and the copy must not imply one.
+    expect(text).toContain("average");
+    expect(text).toContain("not a percentile");
+    expect(text.toLowerCase()).not.toContain("top ");
+    expect(text).not.toMatch(/\d+%/);
+  });
+
+  it("quotes the date and the reporting base rather than assuming them", () => {
+    const text = explain("community", {
+      communityAsOf: "2026-09-02",
+      communityReportingInstalls: 526665,
+    });
+
+    expect(text).toContain("2026-09-02");
+    expect(text).toContain("526,665");
+  });
+
   it("still reads as a sentence when no context is available", () => {
     const text = explain("fire_rate", {});
 

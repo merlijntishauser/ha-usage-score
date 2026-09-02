@@ -13,6 +13,10 @@ export interface ExplanationContext {
   readonly windowDays?: number;
   /** Groups the coverage half is measured against, from the integration. */
   readonly targetGroups?: number;
+  /** Date the bundled community averages were taken, from the integration. */
+  readonly communityAsOf?: string;
+  /** Installs those averages are drawn from, from the integration. */
+  readonly communityReportingInstalls?: number;
 }
 
 /** Every key the cards can ask about. */
@@ -33,7 +37,14 @@ export const EXPLAINED_KEYS = [
   "activity_30d",
   "groups_covered",
   "evenness",
+  "community",
 ] as const;
+
+const installs = (context: ExplanationContext): string =>
+  context.communityReportingInstalls === undefined
+    ? "the installs that report statistics"
+    : `the ${context.communityReportingInstalls.toLocaleString("en-US")} ` +
+      "installs that report statistics";
 
 const window_ = (context: ExplanationContext): string =>
   context.windowDays === undefined
@@ -105,6 +116,17 @@ function build(context: ExplanationContext): Record<string, string> {
       "groups - forty Hue bulbs are one integration, not forty. Coverage is " +
       `measured against ${target}, so covering more than that is already full ` +
       "marks on this half.",
+    community:
+      "A comparison with the community average, not a percentile: Home " +
+      "Assistant publishes means and no distribution at all, so there is no " +
+      "way to say what share of installs you are ahead of. Drawn from " +
+      `${installs(context)}${
+        context.communityAsOf === undefined
+          ? ""
+          : `, taken on ${context.communityAsOf}`
+      }, and bundled with the release rather than fetched. Home Assistant ` +
+      "counts every account that is not system-generated where HAUS counts " +
+      "only active ones, so its user figure can read slightly high.",
     evenness:
       "The normalised Shannon entropy of the groups present, H / ln(k). One " +
       "dominant group scores zero however large the estate is; an even spread " +
