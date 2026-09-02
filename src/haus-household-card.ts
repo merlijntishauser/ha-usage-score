@@ -14,12 +14,37 @@ import { HausCardBase, pillarEntityId } from "./base";
 import { HOUSEHOLD_CARD_TYPE, PILLAR_COLORS } from "./const";
 import type { HausCardConfig, HausUserActivity, HomeAssistant } from "./types";
 
-const METRIC_LABELS: Readonly<Record<string, string>> = {
-  accounts: "Accounts",
-  mobile_apps: "Mobile apps",
-  activity_7d: "Active this week",
-  activity_30d: "Active this month",
-};
+/**
+ * Each metric, with the attribute holding its real count.
+ *
+ * The metric itself is a curve - four accounts saturate to 86 - so the count
+ * is what gets printed and the score is left to draw the bar.
+ */
+const METRICS: readonly {
+  key: string;
+  label: string;
+  countAttribute: string;
+}[] = [
+  { key: "accounts", label: "Accounts", countAttribute: "active_accounts" },
+  {
+    key: "mobile_apps",
+    label: "Mobile apps",
+    countAttribute: "mobile_app_devices",
+  },
+  {
+    key: "activity_7d",
+    label: "Active this week",
+    countAttribute: "users_active_7d",
+  },
+  {
+    key: "activity_30d",
+    label: "Active this month",
+    countAttribute: "users_active_30d",
+  },
+];
+
+/** Both activity windows are covered once the tally is this old. */
+const SUSTAINED_WINDOW_DAYS = 30;
 
 type DetailState =
   | { kind: "idle" }
@@ -111,26 +136,36 @@ export class HausHouseholdCard extends HausCardBase {
     }
 
     const metrics = (attributes["metrics"] ?? {}) as Record<string, number>;
+    const watching = Number(attributes["activity_history_days"] ?? 0);
 
     return html`
       <ha-card>
         <div class="pad">
           <div class="metrics">
-            ${Object.entries(metrics).map(
-              ([key, value]) => html`
+            ${METRICS.map((metric) => {
+              const score = metrics[metric.key] ?? 0;
+              const count = attributes[metric.countAttribute];
+              return html`
                 <div class="metric">
-                  <div class="num">${Math.round(value)}</div>
-                  <div class="label">${METRIC_LABELS[key] ?? key}</div>
+                  <div class="num">${count ?? "—"}</div>
+                  <div class="label">${metric.label}</div>
                   <div class="bar">
                     <span
-                      style="width:${Math.max(0, Math.min(100, value))}%;
+                      style="width:${Math.max(0, Math.min(100, score))}%;
                              background:${PILLAR_COLORS["users"]}"
                     ></span>
                   </div>
                 </div>
-              `,
-            )}
+              `;
+            })}
           </div>
+          ${watching < SUSTAINED_WINDOW_DAYS
+            ? html`<p class="note">
+                Activity has only been counted for ${watching} days, since HAUS
+                started watching. The bars sit at a neutral value until each
+                window has filled.
+              </p>`
+            : nothing}
           ${this._detailSection()}
         </div>
       </ha-card>

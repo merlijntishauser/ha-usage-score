@@ -80,9 +80,11 @@ export class HausBreakdownCard extends HausCardBase {
             )}
           </div>
           <p class="explainer">
-            Every pillar is a weighted mean of the signals below. Weights are
-            the ones actually in force: with HAGHS absent, hygiene is dropped
-            and the rest are renormalised over the full scale.
+            Every pillar is a weighted mean of the signals below, and each
+            signal is itself scored 0-100 rather than counted - four accounts
+            score 86, they are not 86 accounts. Weights are the ones actually
+            in force: with HAGHS absent, hygiene is dropped and the rest are
+            renormalised over the full scale.
           </p>
           ${PILLARS.map((pillar) => this._pillarSection(pillar))}
         </div>

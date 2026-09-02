@@ -151,3 +151,11 @@ describe("haus-breakdown-card", () => {
     expect(ctor.getStubConfig().type).toContain("haus-breakdown-card");
   });
 });
+
+describe("reading the numbers", () => {
+  it("says the signals are scored, not counted", async () => {
+    const card = await render(makeHass());
+
+    expect(text(card)).toMatch(/scored 0-100/i);
+  });
+});
