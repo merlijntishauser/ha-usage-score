@@ -493,3 +493,38 @@ ACTIVITY_MIN_HISTORY_DAYS: dict[str, int] = {
     "activity_7d": ACTIVITY_RECENT_DAYS,
     "activity_30d": ACTIVITY_SUSTAINED_DAYS,
 }
+
+
+# --- Community comparison -------------------------------------------------
+#
+# Bundled, not fetched. Home Assistant's public analytics publishes no
+# distribution of any kind - only means - so there is no percentile to be had
+# and nothing a weekly download would learn that a release cannot carry. The
+# document is 1 MB gzipped and does not honour a conditional request, which
+# would be a poor trade for two integers.
+#
+# Refresh these when cutting a release, from
+# https://analytics.home-assistant.io/data.json ("current" block), and move
+# COMMUNITY_AS_OF with them - the card states the date, so a stale figure is
+# visible rather than silent.
+COMMUNITY_SOURCE_URL = "https://analytics.home-assistant.io/data.json"
+COMMUNITY_AS_OF = "2026-09-02"
+
+# avg_automations. Home Assistant counts automation entities, which is exactly
+# what automations_defined counts, so this one is like for like.
+COMMUNITY_AVG_AUTOMATIONS = 14
+
+# avg_users. Home Assistant counts non-system-generated users; HAUS's
+# active_accounts additionally requires the account to be active, so this
+# figure can read very slightly high against ours. The explanation says so.
+COMMUNITY_AVG_USERS = 2
+
+# reports_statistics against active_installations at the time above: the
+# averages cover this many installs, not the whole fleet.
+COMMUNITY_REPORTING_INSTALLS = 526665
+
+# avg_integrations is deliberately NOT carried. Home Assistant counts loaded
+# built-in integrations that pass its reporting filter, excluding custom ones
+# entirely; the diversity pillar counts distinct config-entry domains and does
+# include custom integrations. The two numbers do not measure the same thing,
+# and comparing them would flatter or punish an instance for no reason.

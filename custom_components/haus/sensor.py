@@ -11,7 +11,16 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, INTEGRATION_TITLE, SCORE_HISTORY_WEEKS
+from .const import (
+    COMMUNITY_AS_OF,
+    COMMUNITY_AVG_AUTOMATIONS,
+    COMMUNITY_AVG_USERS,
+    COMMUNITY_REPORTING_INSTALLS,
+    COMMUNITY_SOURCE_URL,
+    DOMAIN,
+    INTEGRATION_TITLE,
+    SCORE_HISTORY_WEEKS,
+)
 from .coordinator import HausConfigEntry, HausCoordinator
 from .scoring import pillar_values
 
@@ -72,6 +81,15 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
             "effective_weights": result.effective_weights,
             "contributions": result.contributions,
             "score_history": self.coordinator.store.score_history(SCORE_HISTORY_WEEKS),
+            # Published so the breakdown card can quote them rather than
+            # hard-code them: these move when a release refreshes them.
+            "community": {
+                "automations": COMMUNITY_AVG_AUTOMATIONS,
+                "users": COMMUNITY_AVG_USERS,
+                "as_of": COMMUNITY_AS_OF,
+                "reporting_installs": COMMUNITY_REPORTING_INSTALLS,
+                "source": COMMUNITY_SOURCE_URL,
+            },
         }
 
 

@@ -7,7 +7,14 @@ from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 
-from custom_components.haus.const import DIVERSITY_GROUPS, DOMAIN
+from custom_components.haus.const import (
+    COMMUNITY_AS_OF,
+    COMMUNITY_AVG_AUTOMATIONS,
+    COMMUNITY_AVG_USERS,
+    COMMUNITY_REPORTING_INSTALLS,
+    DIVERSITY_GROUPS,
+    DOMAIN,
+)
 from custom_components.haus.coordinator import HausCoordinator
 
 
@@ -283,3 +290,23 @@ async def test_the_users_sensor_publishes_counts_not_only_scores(
     assert attributes["active_accounts"] >= 2
     # The metric is a saturating curve over the count, not the count itself.
     assert attributes["metrics"]["accounts"] > attributes["active_accounts"]
+
+
+async def test_score_sensor_publishes_the_community_averages(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The card compares against these, so they travel as attributes.
+
+    Bundled rather than fetched: Home Assistant publishes no distribution, only
+    means, so there is nothing to refresh weekly that a release cannot carry.
+    """
+    await _setup(hass)
+
+    community = hass.states.get("sensor.haus_score").attributes["community"]
+
+    assert community["automations"] == COMMUNITY_AVG_AUTOMATIONS
+    assert community["users"] == COMMUNITY_AVG_USERS
+    assert community["as_of"] == COMMUNITY_AS_OF
+    assert community["reporting_installs"] == COMMUNITY_REPORTING_INSTALLS
+    # Not comparable, so deliberately absent rather than quietly wrong.
+    assert "integrations" not in community
