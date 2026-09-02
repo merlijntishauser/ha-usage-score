@@ -20,6 +20,23 @@ export interface HausScoreAttributes {
   readonly effective_weights: Readonly<Record<string, number>>;
   readonly contributions: Readonly<Record<string, number>>;
   readonly score_history?: readonly HausHistoryPoint[];
+  readonly community?: HausCommunityAverages;
+}
+
+/**
+ * Community figures bundled with the release, not fetched.
+ *
+ * Home Assistant publishes means and no distribution, so these support a
+ * comparison and never a rank. Integrations are absent on purpose: Home
+ * Assistant counts loaded built-ins where the diversity pillar counts config
+ * entries, so the two numbers do not measure the same thing.
+ */
+export interface HausCommunityAverages {
+  readonly automations: number;
+  readonly users: number;
+  readonly as_of: string;
+  readonly reporting_installs: number;
+  readonly source?: string;
 }
 
 export interface HassEntity {

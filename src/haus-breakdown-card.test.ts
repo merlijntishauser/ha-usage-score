@@ -23,6 +23,13 @@ function makeHass(degraded = false): HomeAssistant {
         pillars,
         effective_weights: weights,
         contributions: {},
+        community: {
+          automations: 14,
+          users: 2,
+          as_of: "2026-09-02",
+          reporting_installs: 526665,
+          source: "https://analytics.home-assistant.io/data.json",
+        },
       }),
       "sensor.haus_usage": entity("sensor.haus_usage", "70", {
         automations_defined: 61,
@@ -260,5 +267,44 @@ describe("counts alongside scores", () => {
     const card = await render(makeHass());
 
     expect(text(card)).toContain("4 accounts");
+  });
+});
+
+
+describe("community comparison", () => {
+  it("puts the instance count beside the community average", async () => {
+    const card = await render(makeHass());
+    const section = card.shadowRoot?.querySelector(".community");
+
+    expect(section).toBeTruthy();
+    const words = section?.textContent ?? "";
+    expect(words).toContain("61");
+    expect(words).toContain("14");
+    expect(words).toContain("4");
+    expect(words).toContain("2");
+  });
+
+  it("states the date the figures were taken, so a stale one is visible", async () => {
+    const card = await render(makeHass());
+
+    expect(card.shadowRoot?.querySelector(".community")?.textContent).toContain(
+      "2026-09-02",
+    );
+  });
+
+  it("never compares integrations, which are not counted the same way", async () => {
+    const card = await render(makeHass());
+    const words = card.shadowRoot?.querySelector(".community")?.textContent ?? "";
+
+    expect(words.toLowerCase()).not.toContain("integration");
+  });
+
+  it("says nothing at all when the integration publishes no figures", async () => {
+    const hass = makeHass();
+    delete hass.states["sensor.haus_score"]?.attributes["community"];
+
+    const card = await render(hass);
+
+    expect(card.shadowRoot?.querySelector(".community")).toBeNull();
   });
 });

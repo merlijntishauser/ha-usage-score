@@ -102,6 +102,7 @@ export class HausBreakdownCard extends HausCardBase {
   private _explanationContext(): ExplanationContext {
     const usage = this._pillarEntity("usage") ?? {};
     const diversity = this._pillarEntity("diversity") ?? {};
+    const community = this.scoreAttributes.community;
     const context: ExplanationContext = {};
     return {
       ...context,
@@ -111,6 +112,12 @@ export class HausBreakdownCard extends HausCardBase {
       ...(typeof diversity["target_groups"] === "number"
         ? { targetGroups: diversity["target_groups"] }
         : {}),
+      ...(community === undefined
+        ? {}
+        : {
+            communityAsOf: community.as_of,
+            communityReportingInstalls: community.reporting_installs,
+          }),
     };
   }
 
@@ -188,8 +195,62 @@ export class HausBreakdownCard extends HausCardBase {
             renormalised over the full scale.
           </p>
           ${PILLARS.map((pillar) => this._pillarSection(pillar))}
+          ${this._communitySection()}
         </div>
       </ha-card>
+    `;
+  }
+
+  /**
+   * How this house compares with the typical reporting install.
+   *
+   * Two rows, not three: Home Assistant's integration count is loaded
+   * built-ins and ours is config entries, so that one is omitted rather than
+   * drawn wrong. Renders nothing at all when the integration publishes no
+   * figures, which is what an older version looks like.
+   */
+  private _communitySection(): TemplateResult | typeof nothing {
+    const community = this.scoreAttributes.community;
+    if (community === undefined) {
+      return nothing;
+    }
+    const mine = (pillar: string, key: string): number | undefined => {
+      const value = this._pillarEntity(pillar)?.[key];
+      return typeof value === "number" ? value : undefined;
+    };
+    const rows: [string, number | undefined, number][] = [
+      ["Automations", mine("usage", "automations_defined"), community.automations],
+      ["Accounts", mine("users", "active_accounts"), community.users],
+    ];
+    const known = rows.filter(([, own]) => own !== undefined);
+    if (known.length === 0) {
+      return nothing;
+    }
+    return html`
+      <section class="community">
+        <header>
+          <span class="name">
+            Compared with the community
+            ${this._help("community", "the community comparison")}
+          </span>
+        </header>
+        ${this._explanation("community")}
+        ${known.map(
+          ([label, own, average]) => html`
+            <div class="compare">
+              <span>${label}</span>
+              <span class="num"><i>typical ${average}</i> ${own}</span>
+            </div>
+          `,
+        )}
+        <div class="note-row muted">
+          <span>
+            Averages over
+            ${community.reporting_installs.toLocaleString("en-US")} installs
+            reporting statistics, ${community.as_of}
+          </span>
+        </div>
+      </section>
     `;
   }
 
@@ -323,6 +384,19 @@ export class HausBreakdownCard extends HausCardBase {
       font-weight: 500;
       color: var(--primary-text-color);
     }
+    .community {
+      border-top: 1px solid var(--divider-color);
+      padding: 10px 0 4px;
+    }
+    .community header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--primary-text-color);
+    }
     .swatch {
       width: 10px;
       height: 10px;
@@ -339,6 +413,7 @@ export class HausBreakdownCard extends HausCardBase {
       opacity: 0.35;
     }
     .signal,
+    .compare,
     .note-row {
       display: flex;
       justify-content: space-between;
@@ -347,7 +422,8 @@ export class HausBreakdownCard extends HausCardBase {
       font-size: 12px;
       color: var(--secondary-text-color);
     }
-    .signal .num {
+    .signal .num,
+    .compare .num {
       font-variant-numeric: tabular-nums;
       color: var(--primary-text-color);
     }
@@ -378,7 +454,8 @@ export class HausBreakdownCard extends HausCardBase {
       color: var(--primary-text-color);
       border-color: var(--primary-text-color);
     }
-    .signal .num i {
+    .signal .num i,
+    .compare .num i {
       font-style: normal;
       color: var(--secondary-text-color);
       margin-right: 8px;
