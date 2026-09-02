@@ -32,6 +32,7 @@ from .scoring import (
     score_usage,
     score_users,
     usage_metrics,
+    users_details,
     users_metrics,
 )
 from .store import HausStore
@@ -100,7 +101,10 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
                 "usage": usage_metrics(usage_signals),
                 "users": users_metrics(users_signals),
             },
-            details={"diversity": diversity_details(diversity_signals)},
+            details={
+                "diversity": diversity_details(diversity_signals),
+                "users": users_details(users_signals),
+            },
         )
         self.store.record_score(result.score, now)
         return result

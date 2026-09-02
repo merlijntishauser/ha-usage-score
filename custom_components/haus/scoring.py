@@ -211,6 +211,23 @@ def _share_of_accounts(count: int, active_accounts: int) -> float:
     return 100.0 * min(count, active_accounts) / active_accounts
 
 
+def users_details(signals: UsersSignals) -> dict[str, int]:
+    """Return the raw household counts behind the users pillar.
+
+    The metric scores are curves: four accounts saturate to 86. A card that
+    prints "86 accounts" is lying, so the counts travel alongside and the
+    scores are left to drive the bars. Aggregates only - identities stay behind
+    the admin-checked websocket command.
+    """
+    return {
+        "active_accounts": signals.active_accounts,
+        "mobile_app_devices": signals.mobile_app_devices,
+        "users_active_7d": signals.users_active_7d,
+        "users_active_30d": signals.users_active_30d,
+        "activity_history_days": signals.activity_history_days,
+    }
+
+
 def _activity_score(signals: UsersSignals, metric: str, active_users: int) -> float:
     """Score one activity window, or stay neutral while its tally is young."""
     if signals.activity_history_days < ACTIVITY_MIN_HISTORY_DAYS[metric]:

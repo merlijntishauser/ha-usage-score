@@ -38,6 +38,7 @@ from custom_components.haus.scoring import (
     score_users,
     tier_for_score,
     usage_metrics,
+    users_details,
     users_metrics,
 )
 
@@ -619,3 +620,33 @@ def test_diversity_details_leave_out_unclassified_integrations() -> None:
     details = diversity_details(DiversitySignals(group_counts={OTHER_GROUP: 9}))
 
     assert details["group_counts"] == {}
+
+
+def test_users_details_carry_the_raw_counts() -> None:
+    """The household card must show counts, not the 0-100 metric scores.
+
+    Four accounts saturate to a metric of 86; labelling that "86 accounts" is
+    simply untrue, so the counts are published alongside.
+    """
+    signals = UsersSignals(
+        active_accounts=4,
+        mobile_app_devices=3,
+        users_active_7d=2,
+        users_active_30d=3,
+        activity_history_days=9,
+    )
+
+    assert users_details(signals) == {
+        "active_accounts": 4,
+        "mobile_app_devices": 3,
+        "users_active_7d": 2,
+        "users_active_30d": 3,
+        "activity_history_days": 9,
+    }
+
+
+def test_users_details_expose_no_per_user_information() -> None:
+    """Counts only: the identities stay behind the websocket command."""
+    details = users_details(UsersSignals(active_accounts=4))
+
+    assert all(isinstance(value, int) for value in details.values())

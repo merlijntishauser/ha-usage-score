@@ -264,3 +264,22 @@ async def test_the_score_is_collected_again_once_home_assistant_has_started(
         await _setup(hass)
 
     refresh_after_start.assert_awaited()
+
+
+async def test_the_users_sensor_publishes_counts_not_only_scores(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """A card showing "86 accounts" when there are four is a card that lies."""
+    MockUser(name="Alice").add_to_hass(hass)
+    MockUser(name="Bob").add_to_hass(hass)
+    await _setup(hass)
+
+    attributes = hass.states.get("sensor.haus_users").attributes
+
+    assert isinstance(attributes["active_accounts"], int)
+    assert isinstance(attributes["mobile_app_devices"], int)
+    assert isinstance(attributes["users_active_7d"], int)
+    assert isinstance(attributes["activity_history_days"], int)
+    assert attributes["active_accounts"] >= 2
+    # The metric is a saturating curve over the count, not the count itself.
+    assert attributes["metrics"]["accounts"] > attributes["active_accounts"]
