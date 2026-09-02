@@ -9,6 +9,11 @@ from custom_components.haus.const import (
     ACTIVITY_SUSTAINED_DAYS,
     DIVERSITY_GROUPS,
     DOMAIN_GROUPS,
+    K_ACTIVE_ACCOUNTS,
+    K_AUTOMATION_COUNT,
+    K_HELPER_COUNT,
+    K_NOTIFICATION_COUNT,
+    K_SCRIPT_SCENE_COUNT,
     NEUTRAL_METRIC_SCORE,
     NOTIFY_MIN_HISTORY_DAYS,
     OTHER_GROUP,
@@ -644,14 +649,28 @@ def test_users_details_carry_the_raw_counts() -> None:
         "users_active_7d": 2,
         "users_active_30d": 3,
         "activity_history_days": 9,
+        "curve_knees": {"accounts": K_ACTIVE_ACCOUNTS},
     }
 
 
 def test_users_details_expose_no_per_user_information() -> None:
-    """Counts only: the identities stay behind the websocket command."""
+    """Counts only: the identities stay behind the websocket command.
+
+    The check is that nothing in here is a string, at any depth. A user id is
+    a string, so "no strings" forbids one structurally rather than by
+    inspecting for shapes that look like an id. It used to read "every value
+    is an int", which said the same thing while the dict was flat; publishing
+    the curve knees nested a dict of floats inside it, and the guarantee is
+    worth keeping rather than loosening to fit.
+    """
     details = users_details(UsersSignals(active_accounts=4))
 
-    assert all(isinstance(value, int) for value in details.values())
+    def numeric_all_the_way_down(value: object) -> bool:
+        if isinstance(value, dict):
+            return all(numeric_all_the_way_down(inner) for inner in value.values())
+        return isinstance(value, int | float) and not isinstance(value, bool)
+
+    assert numeric_all_the_way_down(details)
 
 
 def test_diversity_details_name_the_coverage_target() -> None:
@@ -685,3 +704,35 @@ def test_usage_details_carry_the_counts_and_the_window() -> None:
     assert details["notification_count"] == 88
     assert details["notification_history_days"] == 3
     assert details["window_days"] == USAGE_WINDOW_DAYS
+
+
+def test_usage_details_publish_the_curve_knees() -> None:
+    """The card quotes these; a `k` that moved would otherwise strand its copy.
+
+    TARGET_GROUPS has already moved 12 -> 16 -> 20, and prose describing a
+    curve's shape drifts exactly as silently as a hard-coded number.
+    """
+    details = usage_details(UsageSignals())
+
+    assert details["curve_knees"] == {
+        "automation_count": K_AUTOMATION_COUNT,
+        "scripts_scenes": K_SCRIPT_SCENE_COUNT,
+        "helpers": K_HELPER_COUNT,
+        "notifications": K_NOTIFICATION_COUNT,
+    }
+
+
+def test_users_details_publish_the_accounts_knee() -> None:
+    """The accounts copy said "whose knee is at two" with two hard-coded."""
+    details = users_details(UsersSignals())
+
+    assert details["curve_knees"] == {"accounts": K_ACTIVE_ACCOUNTS}
+
+
+def test_every_published_knee_names_a_metric_that_exists() -> None:
+    """A knee for a metric nobody scores is copy pointing at nothing."""
+    usage = set(usage_metrics(UsageSignals()))
+    users = set(users_metrics(UsersSignals()))
+
+    assert set(usage_details(UsageSignals())["curve_knees"]) <= usage
+    assert set(users_details(UsersSignals())["curve_knees"]) <= users

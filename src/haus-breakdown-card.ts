@@ -102,7 +102,14 @@ export class HausBreakdownCard extends HausCardBase {
   private _explanationContext(): ExplanationContext {
     const usage = this._pillarEntity("usage") ?? {};
     const diversity = this._pillarEntity("diversity") ?? {};
+    const users = this._pillarEntity("users") ?? {};
     const community = this.scoreAttributes.community;
+    // Knees arrive on the pillar that owns each metric - accounts from users,
+    // the rest from usage - and the explanations want one map.
+    const curveKnees = {
+      ...((usage["curve_knees"] ?? {}) as Record<string, number>),
+      ...((users["curve_knees"] ?? {}) as Record<string, number>),
+    };
     const context: ExplanationContext = {};
     return {
       ...context,
@@ -112,6 +119,7 @@ export class HausBreakdownCard extends HausCardBase {
       ...(typeof diversity["target_groups"] === "number"
         ? { targetGroups: diversity["target_groups"] }
         : {}),
+      ...(Object.keys(curveKnees).length === 0 ? {} : { curveKnees }),
       ...(community === undefined
         ? {}
         : {

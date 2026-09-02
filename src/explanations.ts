@@ -17,6 +17,9 @@ export interface ExplanationContext {
   readonly communityAsOf?: string;
   /** Installs those averages are drawn from, from the integration. */
   readonly communityReportingInstalls?: number;
+  /** Knee of each saturating metric's curve, keyed by metric, from the
+   * integration. Absent metrics are not curves, or are not published yet. */
+  readonly curveKnees?: Readonly<Record<string, number>>;
 }
 
 /** Every key the cards can ask about. */
@@ -39,6 +42,20 @@ export const EXPLAINED_KEYS = [
   "evenness",
   "community",
 ] as const;
+
+/**
+ * Name a metric's curve, quoting its knee when the integration published one.
+ *
+ * The copy used to say "whose knee is at two" with the two written out. Every
+ * `k` is a tunable exactly as TARGET_GROUPS was, and prose is the one place a
+ * retune fails silently instead of moving a number.
+ */
+const curve = (context: ExplanationContext, key: string): string => {
+  const k = context.curveKnees?.[key];
+  return k === undefined
+    ? "a saturating curve"
+    : `a saturating curve with its knee at ${k}`;
+};
 
 const installs = (context: ExplanationContext): string =>
   context.communityReportingInstalls === undefined
@@ -78,18 +95,20 @@ function build(context: ExplanationContext): Record<string, string> {
       "automation's last_triggered. Weighted heaviest of the usage signals: " +
       "62 automations that never trigger is not usage.",
     automation_count:
-      "How many automations exist, on a saturating curve: the first few count " +
-      "for a great deal and hoarding stops paying. A curve rather than a ratio " +
-      "so a small house is not punished forever.",
+      `How many automations exist, on ${curve(context, "automation_count")}: ` +
+      "the first few count for a great deal and hoarding stops paying. A curve " +
+      "rather than a ratio so a small house is not punished forever.",
     scripts_scenes:
       "Half whether one-touch routines exist at all, half whether they get " +
-      `run - scripts by last_triggered, scenes by their state - in ${w}.`,
+      `run - scripts by last_triggered, scenes by their state - in ${w}. The ` +
+      `presence half is ${curve(context, "scripts_scenes")}.`,
     helpers:
       "input_* entities, counters, timers and schedules, counted from the " +
       "entity registry rather than from state so a helper that is currently " +
-      "unavailable still counts as configured. Saturating.",
+      `unavailable still counts as configured. Scored on ${curve(context, "helpers")}.`,
     notifications:
-      `notify service calls HAUS tallied itself over ${w}. There is no ` +
+      `notify service calls HAUS tallied itself over ${w}, on ` +
+      `${curve(context, "notifications")}. There is no ` +
       "history for this without the recorder, so HAUS counts the events as " +
       "they happen. Until the tally has enough days behind it the metric sits " +
       "at a neutral value rather than at zero.",
@@ -97,9 +116,8 @@ function build(context: ExplanationContext): Record<string, string> {
       "The share of recognised advanced features present: template entities, " +
       "zones beyond zone.home, and a configured voice assistant.",
     accounts:
-      "Active accounts that are not system-generated, on a saturating curve " +
-      "whose knee is at two - a second person who can operate the house is the " +
-      "point of this pillar.",
+      `Active accounts that are not system-generated, on ${curve(context, "accounts")} ` +
+      "- a second person who can operate the house is the point of this pillar.",
     mobile_apps:
       "Mobile app registrations as a share of the accounts, capped at 100. " +
       "Someone with three phones is not three people.",

@@ -40,6 +40,12 @@ function makeHass(degraded = false): HomeAssistant {
         notification_count: 88,
         notification_history_days: 3,
         window_days: 30,
+        curve_knees: {
+          automation_count: 12,
+          scripts_scenes: 10,
+          helpers: 12,
+          notifications: 30,
+        },
         metrics: {
           fire_rate: 55.5,
           automation_count: 88,
@@ -61,6 +67,7 @@ function makeHass(degraded = false): HomeAssistant {
         users_active_7d: 2,
         users_active_30d: 3,
         activity_history_days: 9,
+        curve_knees: { accounts: 2 },
         metrics: {
           accounts: 86.5,
           mobile_apps: 100,
@@ -306,5 +313,40 @@ describe("community comparison", () => {
     const card = await render(hass);
 
     expect(card.shadowRoot?.querySelector(".community")).toBeNull();
+  });
+});
+
+
+describe("curve knees", () => {
+  it("quotes the knee the integration published, from either pillar", async () => {
+    const card = await render(makeHass());
+    const sr = card.shadowRoot;
+
+    // accounts lives on the users sensor, automation_count on usage: the card
+    // has to merge both into one explanation context.
+    (sr?.querySelectorAll(".signal .help") ?? []).forEach((pill) =>
+      (pill as HTMLButtonElement).click(),
+    );
+    await card.updateComplete;
+
+    const text = sr?.textContent ?? "";
+    expect(text).toContain("knee at 2");
+    expect(text).toContain("knee at 12");
+    expect(text).not.toContain("knee is at two");
+  });
+
+  it("falls back to describing the shape when no knees are published", async () => {
+    const hass = makeHass();
+    delete hass.states["sensor.haus_users"]?.attributes["curve_knees"];
+    const card = await render(hass);
+
+    (card.shadowRoot?.querySelectorAll(".signal .help") ?? []).forEach((pill) =>
+      (pill as HTMLButtonElement).click(),
+    );
+    await card.updateComplete;
+
+    const text = card.shadowRoot?.textContent ?? "";
+    expect(text).toContain("saturating curve");
+    expect(text).not.toContain("undefined");
   });
 });

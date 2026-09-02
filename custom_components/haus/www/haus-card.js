@@ -14,7 +14,7 @@ const t=globalThis,e=t.ShadowRoot&&(void 0===t.ShadyCSS||t.ShadyCSS.nativeShadow
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{createHTML:t=>t}):void 0,E="$lit$",k=`lit$${Math.random().toFixed(9).slice(2)}$`,C="?"+k,H=`<${C}>`,U=document,z=()=>U.createComment(""),P=t=>null===t||"object"!=typeof t&&"function"!=typeof t,M=Array.isArray,N="[ \t\n\f\r]",T=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,O=/-->/g,R=/>/g,I=RegExp(`>|${N}(?:([^\\s"'>=/]+)(${N}*=${N}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),j=/'/g,D=/"/g,W=/^(?:script|style|textarea|title)$/i,B=t=>(e,...s)=>({_$litType$:t,strings:e,values:s}),L=B(1),q=B(2),F=Symbol.for("lit-noChange"),G=Symbol.for("lit-nothing"),V=new WeakMap,J=U.createTreeWalker(U,129);function K(t,e){if(!M(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==S?S.createHTML(e):e}const Z=(t,e)=>{const s=t.length-1,i=[];let r,n=2===e?"<svg>":3===e?"<math>":"",o=T;for(let e=0;e<s;e++){const s=t[e];let a,c,l=-1,d=0;for(;d<s.length&&(o.lastIndex=d,c=o.exec(s),null!==c);)d=o.lastIndex,o===T?"!--"===c[1]?o=O:void 0!==c[1]?o=R:void 0!==c[2]?(W.test(c[2])&&(r=RegExp("</"+c[2],"g")),o=I):void 0!==c[3]&&(o=I):o===I?">"===c[0]?(o=r??T,l=-1):void 0===c[1]?l=-2:(l=o.lastIndex-c[2].length,a=c[1],o=void 0===c[3]?I:'"'===c[3]?D:j):o===D||o===j?o=I:o===O||o===R?o=T:(o=I,r=void 0);const h=o===I&&t[e+1].startsWith("/>")?" ":"";n+=o===T?s+H:l>=0?(i.push(a),s.slice(0,l)+E+s.slice(l)+k+h):s+k+(-2===l?e:h)}return[K(t,n+(t[s]||"<?>")+(2===e?"</svg>":3===e?"</math>":"")),i]};class Q{constructor({strings:t,_$litType$:e},s){let i;this.parts=[];let r=0,n=0;const o=t.length-1,a=this.parts,[c,l]=Z(t,e);if(this.el=Q.createElement(c,s),J.currentNode=this.el.content,2===e||3===e){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(i=J.nextNode())&&a.length<o;){if(1===i.nodeType){if(i.hasAttributes())for(const t of i.getAttributeNames())if(t.endsWith(E)){const e=l[n++],s=i.getAttribute(t).split(k),o=/([.?@])?(.*)/.exec(e);a.push({type:1,index:r,name:o[2],strings:s,ctor:"."===o[1]?st:"?"===o[1]?it:"@"===o[1]?rt:et}),i.removeAttribute(t)}else t.startsWith(k)&&(a.push({type:6,index:r}),i.removeAttribute(t));if(W.test(i.tagName)){const t=i.textContent.split(k),e=t.length-1;if(e>0){i.textContent=A?A.emptyScript:"";for(let s=0;s<e;s++)i.append(t[s],z()),J.nextNode(),a.push({type:2,index:++r});i.append(t[e],z())}}}else if(8===i.nodeType)if(i.data===C)a.push({type:2,index:r});else{let t=-1;for(;-1!==(t=i.data.indexOf(k,t+1));)a.push({type:7,index:r}),t+=k.length-1}r++}}static createElement(t,e){const s=U.createElement("template");return s.innerHTML=t,s}}function X(t,e,s=t,i){if(e===F)return e;let r=void 0!==i?s._$Co?.[i]:s._$Cl;const n=P(e)?void 0:e._$litDirective$;return r?.constructor!==n&&(r?._$AO?.(!1),void 0===n?r=void 0:(r=new n(t),r._$AT(t,s,i)),void 0!==i?(s._$Co??=[])[i]=r:s._$Cl=r),void 0!==r&&(e=X(t,r._$AS(t,e.values),r,i)),e}class Y{constructor(t,e){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:e},parts:s}=this._$AD,i=(t?.creationScope??U).importNode(e,!0);J.currentNode=i;let r=J.nextNode(),n=0,o=0,a=s[0];for(;void 0!==a;){if(n===a.index){let e;2===a.type?e=new tt(r,r.nextSibling,this,t):1===a.type?e=new a.ctor(r,a.name,a.strings,this,t):6===a.type&&(e=new nt(r,this,t)),this._$AV.push(e),a=s[++o]}n!==a?.index&&(r=J.nextNode(),n++)}return J.currentNode=U,i}p(t){let e=0;for(const s of this._$AV)void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,e),e+=s.strings.length-2):s._$AI(t[e])),e++}}class tt{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,e,s,i){this.type=2,this._$AH=G,this._$AN=void 0,this._$AA=t,this._$AB=e,this._$AM=s,this.options=i,this._$Cv=i?.isConnected??!0}get parentNode(){let t=this._$AA.parentNode;const e=this._$AM;return void 0!==e&&11===t?.nodeType&&(t=e.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,e=this){t=X(this,t,e),P(t)?t===G||null==t||""===t?(this._$AH!==G&&this._$AR(),this._$AH=G):t!==this._$AH&&t!==F&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):(t=>M(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this._(t)}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t))}_(t){this._$AH!==G&&P(this._$AH)?this._$AA.nextSibling.data=t:this.T(U.createTextNode(t)),this._$AH=t}$(t){const{values:e,_$litType$:s}=t,i="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=Q.createElement(K(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===i)this._$AH.p(e);else{const t=new Y(i,this),s=t.u(this.options);t.p(e),this.T(s),this._$AH=t}}_$AC(t){let e=V.get(t.strings);return void 0===e&&V.set(t.strings,e=new Q(t)),e}k(t){M(this._$AH)||(this._$AH=[],this._$AR());const e=this._$AH;let s,i=0;for(const r of t)i===e.length?e.push(s=new tt(this.O(z()),this.O(z()),this,this.options)):s=e[i],s._$AI(r),i++;i<e.length&&(this._$AR(s&&s._$AB.nextSibling,i),e.length=i)}_$AR(t=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);t!==this._$AB;){const e=w(t).nextSibling;w(t).remove(),t=e}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t))}}class et{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,e,s,i,r){this.type=1,this._$AH=G,this._$AN=void 0,this.element=t,this.name=e,this._$AM=i,this.options=r,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=G}_$AI(t,e=this,s,i){const r=this.strings;let n=!1;if(void 0===r)t=X(this,t,e,0),n=!P(t)||t!==this._$AH&&t!==F,n&&(this._$AH=t);else{const i=t;let o,a;for(t=r[0],o=0;o<r.length-1;o++)a=X(this,i[s+o],e,o),a===F&&(a=this._$AH[o]),n||=!P(a)||a!==this._$AH[o],a===G?t=G:t!==G&&(t+=(a??"")+r[o+1]),this._$AH[o]=a}n&&!i&&this.j(t)}j(t){t===G?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class st extends et{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===G?void 0:t}}class it extends et{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==G)}}class rt extends et{constructor(t,e,s,i,r){super(t,e,s,i,r),this.type=5}_$AI(t,e=this){if((t=X(this,t,e,0)??G)===F)return;const s=this._$AH,i=t===G&&s!==G||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,r=t!==G&&(s===G||i);i&&this.element.removeEventListener(this.name,this,s),r&&this.element.addEventListener(this.name,this,t),this._$AH=t}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t)}}class nt{constructor(t,e,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=e,this.options=s}get _$AU(){return this._$AM._$AU}_$AI(t){X(this,t)}}const ot=b.litHtmlPolyfillSupport;ot?.(Q,tt),(b.litHtmlVersions??=[]).push("3.3.3");const at=globalThis;
+const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{createHTML:t=>t}):void 0,E="$lit$",k=`lit$${Math.random().toFixed(9).slice(2)}$`,C="?"+k,H=`<${C}>`,U=document,z=()=>U.createComment(""),P=t=>null===t||"object"!=typeof t&&"function"!=typeof t,M=Array.isArray,N="[ \t\n\f\r]",T=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,O=/-->/g,R=/>/g,I=RegExp(`>|${N}(?:([^\\s"'>=/]+)(${N}*=${N}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),j=/'/g,D=/"/g,W=/^(?:script|style|textarea|title)$/i,B=t=>(e,...s)=>({_$litType$:t,strings:e,values:s}),L=B(1),q=B(2),F=Symbol.for("lit-noChange"),G=Symbol.for("lit-nothing"),V=new WeakMap,K=U.createTreeWalker(U,129);function J(t,e){if(!M(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==S?S.createHTML(e):e}const Z=(t,e)=>{const s=t.length-1,i=[];let r,n=2===e?"<svg>":3===e?"<math>":"",o=T;for(let e=0;e<s;e++){const s=t[e];let a,c,l=-1,d=0;for(;d<s.length&&(o.lastIndex=d,c=o.exec(s),null!==c);)d=o.lastIndex,o===T?"!--"===c[1]?o=O:void 0!==c[1]?o=R:void 0!==c[2]?(W.test(c[2])&&(r=RegExp("</"+c[2],"g")),o=I):void 0!==c[3]&&(o=I):o===I?">"===c[0]?(o=r??T,l=-1):void 0===c[1]?l=-2:(l=o.lastIndex-c[2].length,a=c[1],o=void 0===c[3]?I:'"'===c[3]?D:j):o===D||o===j?o=I:o===O||o===R?o=T:(o=I,r=void 0);const h=o===I&&t[e+1].startsWith("/>")?" ":"";n+=o===T?s+H:l>=0?(i.push(a),s.slice(0,l)+E+s.slice(l)+k+h):s+k+(-2===l?e:h)}return[J(t,n+(t[s]||"<?>")+(2===e?"</svg>":3===e?"</math>":"")),i]};class Q{constructor({strings:t,_$litType$:e},s){let i;this.parts=[];let r=0,n=0;const o=t.length-1,a=this.parts,[c,l]=Z(t,e);if(this.el=Q.createElement(c,s),K.currentNode=this.el.content,2===e||3===e){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(i=K.nextNode())&&a.length<o;){if(1===i.nodeType){if(i.hasAttributes())for(const t of i.getAttributeNames())if(t.endsWith(E)){const e=l[n++],s=i.getAttribute(t).split(k),o=/([.?@])?(.*)/.exec(e);a.push({type:1,index:r,name:o[2],strings:s,ctor:"."===o[1]?st:"?"===o[1]?it:"@"===o[1]?rt:et}),i.removeAttribute(t)}else t.startsWith(k)&&(a.push({type:6,index:r}),i.removeAttribute(t));if(W.test(i.tagName)){const t=i.textContent.split(k),e=t.length-1;if(e>0){i.textContent=A?A.emptyScript:"";for(let s=0;s<e;s++)i.append(t[s],z()),K.nextNode(),a.push({type:2,index:++r});i.append(t[e],z())}}}else if(8===i.nodeType)if(i.data===C)a.push({type:2,index:r});else{let t=-1;for(;-1!==(t=i.data.indexOf(k,t+1));)a.push({type:7,index:r}),t+=k.length-1}r++}}static createElement(t,e){const s=U.createElement("template");return s.innerHTML=t,s}}function X(t,e,s=t,i){if(e===F)return e;let r=void 0!==i?s._$Co?.[i]:s._$Cl;const n=P(e)?void 0:e._$litDirective$;return r?.constructor!==n&&(r?._$AO?.(!1),void 0===n?r=void 0:(r=new n(t),r._$AT(t,s,i)),void 0!==i?(s._$Co??=[])[i]=r:s._$Cl=r),void 0!==r&&(e=X(t,r._$AS(t,e.values),r,i)),e}class Y{constructor(t,e){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:e},parts:s}=this._$AD,i=(t?.creationScope??U).importNode(e,!0);K.currentNode=i;let r=K.nextNode(),n=0,o=0,a=s[0];for(;void 0!==a;){if(n===a.index){let e;2===a.type?e=new tt(r,r.nextSibling,this,t):1===a.type?e=new a.ctor(r,a.name,a.strings,this,t):6===a.type&&(e=new nt(r,this,t)),this._$AV.push(e),a=s[++o]}n!==a?.index&&(r=K.nextNode(),n++)}return K.currentNode=U,i}p(t){let e=0;for(const s of this._$AV)void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,e),e+=s.strings.length-2):s._$AI(t[e])),e++}}class tt{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,e,s,i){this.type=2,this._$AH=G,this._$AN=void 0,this._$AA=t,this._$AB=e,this._$AM=s,this.options=i,this._$Cv=i?.isConnected??!0}get parentNode(){let t=this._$AA.parentNode;const e=this._$AM;return void 0!==e&&11===t?.nodeType&&(t=e.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,e=this){t=X(this,t,e),P(t)?t===G||null==t||""===t?(this._$AH!==G&&this._$AR(),this._$AH=G):t!==this._$AH&&t!==F&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):(t=>M(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this._(t)}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t))}_(t){this._$AH!==G&&P(this._$AH)?this._$AA.nextSibling.data=t:this.T(U.createTextNode(t)),this._$AH=t}$(t){const{values:e,_$litType$:s}=t,i="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=Q.createElement(J(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===i)this._$AH.p(e);else{const t=new Y(i,this),s=t.u(this.options);t.p(e),this.T(s),this._$AH=t}}_$AC(t){let e=V.get(t.strings);return void 0===e&&V.set(t.strings,e=new Q(t)),e}k(t){M(this._$AH)||(this._$AH=[],this._$AR());const e=this._$AH;let s,i=0;for(const r of t)i===e.length?e.push(s=new tt(this.O(z()),this.O(z()),this,this.options)):s=e[i],s._$AI(r),i++;i<e.length&&(this._$AR(s&&s._$AB.nextSibling,i),e.length=i)}_$AR(t=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);t!==this._$AB;){const e=w(t).nextSibling;w(t).remove(),t=e}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t))}}class et{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,e,s,i,r){this.type=1,this._$AH=G,this._$AN=void 0,this.element=t,this.name=e,this._$AM=i,this.options=r,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=G}_$AI(t,e=this,s,i){const r=this.strings;let n=!1;if(void 0===r)t=X(this,t,e,0),n=!P(t)||t!==this._$AH&&t!==F,n&&(this._$AH=t);else{const i=t;let o,a;for(t=r[0],o=0;o<r.length-1;o++)a=X(this,i[s+o],e,o),a===F&&(a=this._$AH[o]),n||=!P(a)||a!==this._$AH[o],a===G?t=G:t!==G&&(t+=(a??"")+r[o+1]),this._$AH[o]=a}n&&!i&&this.j(t)}j(t){t===G?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class st extends et{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===G?void 0:t}}class it extends et{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==G)}}class rt extends et{constructor(t,e,s,i,r){super(t,e,s,i,r),this.type=5}_$AI(t,e=this){if((t=X(this,t,e,0)??G)===F)return;const s=this._$AH,i=t===G&&s!==G||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,r=t!==G&&(s===G||i);i&&this.element.removeEventListener(this.name,this,s),r&&this.element.addEventListener(this.name,this,t),this._$AH=t}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t)}}class nt{constructor(t,e,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=e,this.options=s}get _$AU(){return this._$AM._$AU}_$AI(t){X(this,t)}}const ot=b.litHtmlPolyfillSupport;ot?.(Q,tt),(b.litHtmlVersions??=[]).push("3.3.3");const at=globalThis;
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -76,7 +76,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       border: 1px solid var(--divider-color);
       border-radius: 4px;
     }
-  `,customElements.get(kt)||customElements.define(kt,Ct);const Ht=t=>void 0===t.communityReportingInstalls?"the installs that report statistics":`the ${t.communityReportingInstalls.toLocaleString("en-US")} installs that report statistics`;function Ut(t,e){return function(t){const e=(t=>void 0===t.windowDays?"the recent window":`the last ${t.windowDays} days`)(t),s=void 0===t.targetGroups?"a target number of groups":`${t.targetGroups} groups`;return{hygiene:"Read from HAGHS and weighted at 30%. HAUS never recomputes it: no zombie-entity counting, no database size, no backup checks. When HAGHS is absent this pillar is dropped and the other three are renormalised over the full scale, rather than scored zero.",usage:"A weighted mean of the six signals below. What counts is firing, not existing, so the fire rate carries the most weight.",diversity:`Half how evenly the estate is spread over the groups it covers, half how many of ${s} it covers at all.`,users:"A weighted mean of the four signals below. A home only its builder can operate is a hobby, so the account count carries the most weight.",fire_rate:`The share of your automations that ran in ${e}, read from each automation's last_triggered. Weighted heaviest of the usage signals: 62 automations that never trigger is not usage.`,automation_count:"How many automations exist, on a saturating curve: the first few count for a great deal and hoarding stops paying. A curve rather than a ratio so a small house is not punished forever.",scripts_scenes:`Half whether one-touch routines exist at all, half whether they get run - scripts by last_triggered, scenes by their state - in ${e}.`,helpers:"input_* entities, counters, timers and schedules, counted from the entity registry rather than from state so a helper that is currently unavailable still counts as configured. Saturating.",notifications:`notify service calls HAUS tallied itself over ${e}. There is no history for this without the recorder, so HAUS counts the events as they happen. Until the tally has enough days behind it the metric sits at a neutral value rather than at zero.`,advanced:"The share of recognised advanced features present: template entities, zones beyond zone.home, and a configured voice assistant.",accounts:"Active accounts that are not system-generated, on a saturating curve whose knee is at two - a second person who can operate the house is the point of this pillar.",mobile_apps:"Mobile app registrations as a share of the accounts, capped at 100. Someone with three phones is not three people.",activity_7d:"How many distinct people caused a state change in the last seven days, as a share of the accounts. A change with no user behind it is an automation firing, not a person, and does not count.",activity_30d:"The same over thirty days. Both windows sit at a neutral value until the tally has been running long enough to cover them: a fresh install has not earned a zero, it simply has no history yet.",groups_covered:`Config entries are reduced to their domains and mapped onto 27 curated groups - forty Hue bulbs are one integration, not forty. Coverage is measured against ${s}, so covering more than that is already full marks on this half.`,community:`A comparison with the community average, not a percentile: Home Assistant publishes means and no distribution at all, so there is no way to say what share of installs you are ahead of. Drawn from ${Ht(t)}${void 0===t.communityAsOf?"":`, taken on ${t.communityAsOf}`}, and bundled with the release rather than fetched. Home Assistant counts every account that is not system-generated where HAUS counts only active ones, so its user figure can read slightly high.`,evenness:"The normalised Shannon entropy of the groups present, H / ln(k). One dominant group scores zero however large the estate is; an even spread scores one."}}(e)[t]}const zt={fire_rate:t=>void 0===t.automations_defined?void 0:`${t.automations_fired} of ${t.automations_defined} fired`,automation_count:t=>void 0===t.automations_defined?void 0:`${t.automations_defined} defined`,scripts_scenes:t=>void 0===t.scripts_and_scenes_defined?void 0:`${t.scripts_and_scenes_used} of ${t.scripts_and_scenes_defined} used`,helpers:t=>void 0===t.helper_count?void 0:`${t.helper_count} helpers`,notifications:t=>void 0===t.notification_count?void 0:`${t.notification_count} sent`,accounts:t=>void 0===t.active_accounts?void 0:`${t.active_accounts} accounts`,mobile_apps:t=>void 0===t.mobile_app_devices?void 0:`${t.mobile_app_devices} registered`,activity_7d:t=>void 0===t.users_active_7d?void 0:`${t.users_active_7d} people`,activity_30d:t=>void 0===t.users_active_30d?void 0:`${t.users_active_30d} people`},Pt={fire_rate:"Fire rate",automation_count:"Automations",scripts_scenes:"Scripts and scenes",helpers:"Helpers",notifications:"Notifications",advanced:"Advanced features",accounts:"Accounts",mobile_apps:"Mobile apps",activity_7d:"Active this week",activity_30d:"Active this month"};class Mt extends At{constructor(){super(...arguments),this.defaultTitle="Score breakdown",this._open=new Set,this.cardName=vt}watchedEntityIds(){const t=this.getConfigEntity();return[t,...ht.filter(t=>"hygiene"!==t).map(e=>St(t,e))]}getCardSize(){return 6}static getStubConfig(){return{type:`custom:${vt}`}}static getConfigElement(){return document.createElement("haus-card-editor")}_explanationContext(){const t=this._pillarEntity("usage")??{},e=this._pillarEntity("diversity")??{},s=this.scoreAttributes.community;return{..."number"==typeof t.window_days?{windowDays:t.window_days}:{},..."number"==typeof e.target_groups?{targetGroups:e.target_groups}:{},...void 0===s?{}:{communityAsOf:s.as_of,communityReportingInstalls:s.reporting_installs}}}_toggle(t){this._open.has(t)?this._open.delete(t):this._open.add(t),this.requestUpdate()}_help(t,e){return void 0===Ut(t,this._explanationContext())?G:L`<button
+  `,customElements.get(kt)||customElements.define(kt,Ct);const Ht=(t,e)=>{const s=t.curveKnees?.[e];return void 0===s?"a saturating curve":`a saturating curve with its knee at ${s}`},Ut=t=>void 0===t.communityReportingInstalls?"the installs that report statistics":`the ${t.communityReportingInstalls.toLocaleString("en-US")} installs that report statistics`;function zt(t,e){return function(t){const e=(t=>void 0===t.windowDays?"the recent window":`the last ${t.windowDays} days`)(t),s=void 0===t.targetGroups?"a target number of groups":`${t.targetGroups} groups`;return{hygiene:"Read from HAGHS and weighted at 30%. HAUS never recomputes it: no zombie-entity counting, no database size, no backup checks. When HAGHS is absent this pillar is dropped and the other three are renormalised over the full scale, rather than scored zero.",usage:"A weighted mean of the six signals below. What counts is firing, not existing, so the fire rate carries the most weight.",diversity:`Half how evenly the estate is spread over the groups it covers, half how many of ${s} it covers at all.`,users:"A weighted mean of the four signals below. A home only its builder can operate is a hobby, so the account count carries the most weight.",fire_rate:`The share of your automations that ran in ${e}, read from each automation's last_triggered. Weighted heaviest of the usage signals: 62 automations that never trigger is not usage.`,automation_count:`How many automations exist, on ${Ht(t,"automation_count")}: the first few count for a great deal and hoarding stops paying. A curve rather than a ratio so a small house is not punished forever.`,scripts_scenes:`Half whether one-touch routines exist at all, half whether they get run - scripts by last_triggered, scenes by their state - in ${e}. The presence half is ${Ht(t,"scripts_scenes")}.`,helpers:`input_* entities, counters, timers and schedules, counted from the entity registry rather than from state so a helper that is currently unavailable still counts as configured. Scored on ${Ht(t,"helpers")}.`,notifications:`notify service calls HAUS tallied itself over ${e}, on ${Ht(t,"notifications")}. There is no history for this without the recorder, so HAUS counts the events as they happen. Until the tally has enough days behind it the metric sits at a neutral value rather than at zero.`,advanced:"The share of recognised advanced features present: template entities, zones beyond zone.home, and a configured voice assistant.",accounts:`Active accounts that are not system-generated, on ${Ht(t,"accounts")} - a second person who can operate the house is the point of this pillar.`,mobile_apps:"Mobile app registrations as a share of the accounts, capped at 100. Someone with three phones is not three people.",activity_7d:"How many distinct people caused a state change in the last seven days, as a share of the accounts. A change with no user behind it is an automation firing, not a person, and does not count.",activity_30d:"The same over thirty days. Both windows sit at a neutral value until the tally has been running long enough to cover them: a fresh install has not earned a zero, it simply has no history yet.",groups_covered:`Config entries are reduced to their domains and mapped onto 27 curated groups - forty Hue bulbs are one integration, not forty. Coverage is measured against ${s}, so covering more than that is already full marks on this half.`,community:`A comparison with the community average, not a percentile: Home Assistant publishes means and no distribution at all, so there is no way to say what share of installs you are ahead of. Drawn from ${Ut(t)}${void 0===t.communityAsOf?"":`, taken on ${t.communityAsOf}`}, and bundled with the release rather than fetched. Home Assistant counts every account that is not system-generated where HAUS counts only active ones, so its user figure can read slightly high.`,evenness:"The normalised Shannon entropy of the groups present, H / ln(k). One dominant group scores zero however large the estate is; an even spread scores one."}}(e)[t]}const Pt={fire_rate:t=>void 0===t.automations_defined?void 0:`${t.automations_fired} of ${t.automations_defined} fired`,automation_count:t=>void 0===t.automations_defined?void 0:`${t.automations_defined} defined`,scripts_scenes:t=>void 0===t.scripts_and_scenes_defined?void 0:`${t.scripts_and_scenes_used} of ${t.scripts_and_scenes_defined} used`,helpers:t=>void 0===t.helper_count?void 0:`${t.helper_count} helpers`,notifications:t=>void 0===t.notification_count?void 0:`${t.notification_count} sent`,accounts:t=>void 0===t.active_accounts?void 0:`${t.active_accounts} accounts`,mobile_apps:t=>void 0===t.mobile_app_devices?void 0:`${t.mobile_app_devices} registered`,activity_7d:t=>void 0===t.users_active_7d?void 0:`${t.users_active_7d} people`,activity_30d:t=>void 0===t.users_active_30d?void 0:`${t.users_active_30d} people`},Mt={fire_rate:"Fire rate",automation_count:"Automations",scripts_scenes:"Scripts and scenes",helpers:"Helpers",notifications:"Notifications",advanced:"Advanced features",accounts:"Accounts",mobile_apps:"Mobile apps",activity_7d:"Active this week",activity_30d:"Active this month"};class Nt extends At{constructor(){super(...arguments),this.defaultTitle="Score breakdown",this._open=new Set,this.cardName=vt}watchedEntityIds(){const t=this.getConfigEntity();return[t,...ht.filter(t=>"hygiene"!==t).map(e=>St(t,e))]}getCardSize(){return 6}static getStubConfig(){return{type:`custom:${vt}`}}static getConfigElement(){return document.createElement("haus-card-editor")}_explanationContext(){const t=this._pillarEntity("usage")??{},e=this._pillarEntity("diversity")??{},s=this._pillarEntity("users")??{},i=this.scoreAttributes.community,r={...t.curve_knees??{},...s.curve_knees??{}};return{..."number"==typeof t.window_days?{windowDays:t.window_days}:{},..."number"==typeof e.target_groups?{targetGroups:e.target_groups}:{},...0===Object.keys(r).length?{}:{curveKnees:r},...void 0===i?{}:{communityAsOf:i.as_of,communityReportingInstalls:i.reporting_installs}}}_toggle(t){this._open.has(t)?this._open.delete(t):this._open.add(t),this.requestUpdate()}_help(t,e){return void 0===zt(t,this._explanationContext())?G:L`<button
       class="help"
       type="button"
       aria-label="How ${e} is calculated"
@@ -85,7 +85,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
     >
       ?
     </button>`}_explanation(t){return this._open.has(t)?L`<p class="explanation">
-      ${Ut(t,this._explanationContext())}
+      ${zt(t,this._explanationContext())}
     </p>`:G}_pillarEntity(t){const e=this.hass,s=e?.states[St(this.getConfigEntity(),t)];return s?.attributes}render(){if(void 0===this.entityState)return L`
         <ha-card>
           <div class="pad missing">
@@ -156,7 +156,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       </div>`;const e=this._pillarEntity(t),s=e?.metrics??{},i=Object.entries(s);if(0===i.length)return L`<div class="note-row muted">
         <span>Signals unavailable - is sensor.haus_${t} enabled?</span>
       </div>`;const r=e??{};return L`
-      ${i.map(([t,e])=>{const s=Pt[t]??t,i=zt[t]?.(r);return L`
+      ${i.map(([t,e])=>{const s=Mt[t]??t,i=Pt[t]?.(r);return L`
           <div class="signal">
             <span>${s} ${this._help(t,s)}</span>
             <span class="num">
@@ -185,7 +185,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
             <span>Nothing in</span>
             <span class="num">${s.join(", ")}</span>
           </div>`:G}
-    `}}Mt.styles=[Et,n`
+    `}}Nt.styles=[Et,n`
     :host {
       display: block;
     }
@@ -303,10 +303,10 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       line-height: 1.5;
       color: var(--secondary-text-color);
     }
-  `],customElements.get(vt)||customElements.define(vt,Mt);function Nt(t,e){const s=(e.size-e.strokeWidth)/2,i=2*Math.PI*s;let r=0;const n=[];for(const s of t){const t=s.points/100*i,o=Math.max(0,t-e.gap);n.push({key:s.key,length:o,dashArray:`${o} ${i}`,dashOffset:-r}),r+=t}const o=t.reduce((t,e)=>t+e.points,0);return{radius:s,circumference:i,segments:n,earned:o,unearned:Math.max(0,100-o)}}const Tt=13;function Ot(t){return ht.filter(e=>void 0!==t[e]).map(e=>({key:e,points:t[e]}))}class Rt extends At{constructor(){super(...arguments),this.cardName=$t}getCardSize(){return 1}static getStubConfig(){return{type:`custom:${$t}`}}static getConfigElement(){return document.createElement("haus-card-editor")}render(){const t=this.entityState;if(void 0===t)return L`<div class="badge missing">
+  `],customElements.get(vt)||customElements.define(vt,Nt);function Tt(t,e){const s=(e.size-e.strokeWidth)/2,i=2*Math.PI*s;let r=0;const n=[];for(const s of t){const t=s.points/100*i,o=Math.max(0,t-e.gap);n.push({key:s.key,length:o,dashArray:`${o} ${i}`,dashOffset:-r}),r+=t}const o=t.reduce((t,e)=>t+e.points,0);return{radius:s,circumference:i,segments:n,earned:o,unearned:Math.max(0,100-o)}}const Ot=13;function Rt(t){return ht.filter(e=>void 0!==t[e]).map(e=>({key:e,points:t[e]}))}class It extends At{constructor(){super(...arguments),this.cardName=$t}getCardSize(){return 1}static getStubConfig(){return{type:`custom:${$t}`}}static getConfigElement(){return document.createElement("haus-card-editor")}render(){const t=this.entityState;if(void 0===t)return L`<div class="badge missing">
         <span class="label">HAUS</span>
         <span class="score">?</span>
-      </div>`;const e=Nt(Ot(this.scoreAttributes.contributions??{}),{size:xt,strokeWidth:3,gap:1});return L`
+      </div>`;const e=Tt(Rt(this.scoreAttributes.contributions??{}),{size:xt,strokeWidth:3,gap:1});return L`
       <div class="badge">
         <svg
           class="ring"
@@ -316,11 +316,11 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
           role="img"
           aria-label="HAUS score ${t.state} out of 100"
         >
-          <g transform="rotate(-90 ${Tt} ${Tt})">
+          <g transform="rotate(-90 ${Ot} ${Ot})">
             <circle
               class="track"
-              cx="${Tt}"
-              cy="${Tt}"
+              cx="${Ot}"
+              cy="${Ot}"
               r="${e.radius}"
               fill="none"
               stroke-width="${3}"
@@ -328,8 +328,8 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
             ${e.segments.map(t=>q`
                 <circle
                   class="segment"
-                  cx="${Tt}"
-                  cy="${Tt}"
+                  cx="${Ot}"
+                  cy="${Ot}"
                   r="${e.radius}"
                   fill="none"
                   stroke="${dt[t.key]}"
@@ -343,7 +343,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
         <span class="label">HAUS</span>
         <span class="score">${t.state}</span>
       </div>
-    `}}Rt.styles=n`
+    `}}It.styles=n`
     :host {
       display: inline-block;
     }
@@ -370,13 +370,13 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       font-weight: 600;
       font-variant-numeric: tabular-nums;
     }
-  `;class It extends At{constructor(){super(...arguments),this.cardName=_t}getCardSize(){return 1}static getStubConfig(){return{type:`custom:${_t}`}}static getConfigElement(){return document.createElement("haus-card-editor")}render(){const t=this.entityState;if(void 0===t)return L`
+  `;class jt extends At{constructor(){super(...arguments),this.cardName=_t}getCardSize(){return 1}static getStubConfig(){return{type:`custom:${_t}`}}static getConfigElement(){return document.createElement("haus-card-editor")}render(){const t=this.entityState;if(void 0===t)return L`
         <ha-card>
           <div class="tile missing">
             Entity <code>${this.getConfigEntity()}</code> was not found.
           </div>
         </ha-card>
-      `;const e=this.scoreAttributes,s=Ot(e.contributions??{});return L`
+      `;const e=this.scoreAttributes,s=Rt(e.contributions??{});return L`
       <ha-card>
         <div class="tile">
           <div class="row">
@@ -398,7 +398,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
           </div>
         </div>
       </ha-card>
-    `}}It.styles=[Et,n`
+    `}}jt.styles=[Et,n`
     :host {
       display: block;
     }
@@ -439,7 +439,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       display: block;
       height: 100%;
     }
-  `],customElements.get($t)||customElements.define($t,Rt),customElements.get(_t)||customElements.define(_t,It);const jt=[{key:"accounts",label:"Accounts",countAttribute:"active_accounts"},{key:"mobile_apps",label:"Mobile apps",countAttribute:"mobile_app_devices"},{key:"activity_7d",label:"Active this week",countAttribute:"users_active_7d"},{key:"activity_30d",label:"Active this month",countAttribute:"users_active_30d"}];class Dt extends At{constructor(){super(...arguments),this.defaultTitle="Household",this.cardName=yt,this._detail={kind:"idle"},this._asked=!1}watchedEntityIds(){const t=this.getConfigEntity();return[t,St(t,"users")]}getCardSize(){return 4}static getStubConfig(){return{type:`custom:${yt}`}}static getConfigElement(){return document.createElement("haus-card-editor")}set hass(t){super.hass=t,this._askForDetail()}get hass(){return super.hass}async _askForDetail(){const t=this.hass;if(!this._asked&&void 0!==t?.callWS){this._asked=!0;try{const e=await t.callWS({type:"haus/user_activity"});this._detail={kind:"users",users:e.users??[]}}catch(t){const e=t?.code;this._detail="not_allowed"===e?{kind:"off"}:"unauthorized"===e?{kind:"forbidden"}:{kind:"error",message:String(t?.message??t)}}this.requestUpdate()}}render(){const t=this.hass,e=St(this.getConfigEntity(),"users"),s=t?.states[e]?.attributes;if(void 0===s)return L`
+  `],customElements.get($t)||customElements.define($t,It),customElements.get(_t)||customElements.define(_t,jt);const Dt=[{key:"accounts",label:"Accounts",countAttribute:"active_accounts"},{key:"mobile_apps",label:"Mobile apps",countAttribute:"mobile_app_devices"},{key:"activity_7d",label:"Active this week",countAttribute:"users_active_7d"},{key:"activity_30d",label:"Active this month",countAttribute:"users_active_30d"}];class Wt extends At{constructor(){super(...arguments),this.defaultTitle="Household",this.cardName=yt,this._detail={kind:"idle"},this._asked=!1}watchedEntityIds(){const t=this.getConfigEntity();return[t,St(t,"users")]}getCardSize(){return 4}static getStubConfig(){return{type:`custom:${yt}`}}static getConfigElement(){return document.createElement("haus-card-editor")}set hass(t){super.hass=t,this._askForDetail()}get hass(){return super.hass}async _askForDetail(){const t=this.hass;if(!this._asked&&void 0!==t?.callWS){this._asked=!0;try{const e=await t.callWS({type:"haus/user_activity"});this._detail={kind:"users",users:e.users??[]}}catch(t){const e=t?.code;this._detail="not_allowed"===e?{kind:"off"}:"unauthorized"===e?{kind:"forbidden"}:{kind:"error",message:String(t?.message??t)}}this.requestUpdate()}}render(){const t=this.hass,e=St(this.getConfigEntity(),"users"),s=t?.states[e]?.attributes;if(void 0===s)return L`
         <ha-card>
           <div class="pad missing">
             Entity <code>${e}</code> was not found. Is the HAUS
@@ -451,7 +451,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
         ${this.renderHeader()}
         <div class="pad">
           <div class="metrics">
-            ${jt.map(t=>{const e=i[t.key]??0,r=s[t.countAttribute];return L`
+            ${Dt.map(t=>{const e=i[t.key]??0,r=s[t.countAttribute];return L`
                 <div class="metric">
                   <div class="num">${r??"—"}</div>
                   <div class="label">${t.label}</div>
@@ -498,7 +498,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
           Per-account detail is only shown to an administrator.
         </p>`;case"error":return L`<p class="note">
           Could not read per-account detail: ${this._detail.message}
-        </p>`;default:return G}}}Dt.styles=[Et,n`
+        </p>`;default:return G}}}Wt.styles=[Et,n`
     :host {
       display: block;
     }
@@ -569,7 +569,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       margin-top: 4px;
       padding-top: 4px;
     }
-  `],customElements.get(yt)||customElements.define(yt,Dt);class Wt extends At{constructor(){super(...arguments),this.defaultTitle="Integration spread",this.cardName=ft}watchedEntityIds(){const t=this.getConfigEntity();return[t,St(t,"diversity")]}getCardSize(){return 4}static getStubConfig(){return{type:`custom:${ft}`}}static getConfigElement(){return document.createElement("haus-card-editor")}render(){const t=this.hass,e=St(this.getConfigEntity(),"diversity"),s=t?.states[e]?.attributes;if(void 0===s)return L`
+  `],customElements.get(yt)||customElements.define(yt,Wt);class Bt extends At{constructor(){super(...arguments),this.defaultTitle="Integration spread",this.cardName=ft}watchedEntityIds(){const t=this.getConfigEntity();return[t,St(t,"diversity")]}getCardSize(){return 4}static getStubConfig(){return{type:`custom:${ft}`}}static getConfigElement(){return document.createElement("haus-card-editor")}render(){const t=this.hass,e=St(this.getConfigEntity(),"diversity"),s=t?.states[e]?.attributes;if(void 0===s)return L`
         <ha-card>
           <div class="pad missing">
             Entity <code>${e}</code> was not found. Is the HAUS
@@ -624,7 +624,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
                 >${t.label} <b>${t.count}</b></span
               >`)}
       </div>
-    `}}Wt.styles=[Et,n`
+    `}}Bt.styles=[Et,n`
     :host {
       display: block;
     }
@@ -702,14 +702,14 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       border: 1px dashed var(--divider-color);
       color: var(--secondary-text-color);
     }
-  `],customElements.get(ft)||customElements.define(ft,Wt);const Bt=[{type:mt,name:"HAUS",description:"How much of Home Assistant this instance actually uses.",preview:!0},{type:vt,name:"HAUS breakdown",description:"The arithmetic behind the score, and every signal under it.",preview:!0},{type:ft,name:"HAUS integration spread",description:"How broad the estate is, and which groups have nothing in them.",preview:!0},{type:yt,name:"HAUS household",description:"Who can operate this house, and whether they do.",preview:!0},{type:$t,name:"HAUS badge",description:"The score as a compact badge.",preview:!0},{type:_t,name:"HAUS tile",description:"Score, tier and a contribution strip.",preview:!0}],Lt=window,qt=Lt.customCards??=[];for(const t of Bt)qt.some(e=>e.type===t.type)||qt.push(t);const Ft=88;class Gt extends At{constructor(){super(...arguments),this.cardName=mt}getCardSize(){return 5}static getStubConfig(){return bt}static getConfigElement(){return document.createElement(`${mt}-editor`)}render(){const t=this.entityState;if(void 0===t)return L`
+  `],customElements.get(ft)||customElements.define(ft,Bt);const Lt=[{type:mt,name:"HAUS",description:"How much of Home Assistant this instance actually uses.",preview:!0},{type:vt,name:"HAUS breakdown",description:"The arithmetic behind the score, and every signal under it.",preview:!0},{type:ft,name:"HAUS integration spread",description:"How broad the estate is, and which groups have nothing in them.",preview:!0},{type:yt,name:"HAUS household",description:"Who can operate this house, and whether they do.",preview:!0},{type:$t,name:"HAUS badge",description:"The score as a compact badge.",preview:!0},{type:_t,name:"HAUS tile",description:"Score, tier and a contribution strip.",preview:!0}],qt=window,Ft=qt.customCards??=[];for(const t of Lt)Ft.some(e=>e.type===t.type)||Ft.push(t);const Gt=88;class Vt extends At{constructor(){super(...arguments),this.cardName=mt}getCardSize(){return 5}static getStubConfig(){return bt}static getConfigElement(){return document.createElement(`${mt}-editor`)}render(){const t=this.entityState;if(void 0===t)return L`
         <ha-card>
           <div class="pad missing">
             Entity <code>${this.getConfigEntity()}</code> was not found. Is the HAUS
             integration set up?
           </div>
         </ha-card>
-      `;const e=this.scoreAttributes,s=e.effective_weights??{},i=e.contributions??{},r=e.pillars??{hygiene:null,usage:0,diversity:0,users:0},n=!1===e.haghs_available,o=Nt(ht.filter(t=>void 0!==i[t]).map(t=>({key:t,points:i[t]})),{size:gt,strokeWidth:13,gap:2});return L`
+      `;const e=this.scoreAttributes,s=e.effective_weights??{},i=e.contributions??{},r=e.pillars??{hygiene:null,usage:0,diversity:0,users:0},n=!1===e.haghs_available,o=Tt(ht.filter(t=>void 0!==i[t]).map(t=>({key:t,points:i[t]})),{size:gt,strokeWidth:13,gap:2});return L`
       <ha-card>
         ${this.renderHeader()}
         <div class="hero">
@@ -722,11 +722,11 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
               role="img"
               aria-label="HAUS score ${t.state} out of 100"
             >
-              <g transform="rotate(-90 ${Ft} ${Ft})">
+              <g transform="rotate(-90 ${Gt} ${Gt})">
                 <circle
                   class="track"
-                  cx="${Ft}"
-                  cy="${Ft}"
+                  cx="${Gt}"
+                  cy="${Gt}"
                   r="${o.radius}"
                   fill="none"
                   stroke-width="${13}"
@@ -734,8 +734,8 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
                 ${o.segments.map(t=>q`
                     <circle
                       class="segment"
-                      cx="${Ft}"
-                      cy="${Ft}"
+                      cx="${Gt}"
+                      cy="${Gt}"
                       r="${o.radius}"
                       fill="none"
                       stroke="${dt[t.key]}"
@@ -793,7 +793,7 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       >
         <polyline points="${o}" fill="none" stroke-width="2" />
       </svg>
-    `}}Gt.styles=[Et,n`
+    `}}Vt.styles=[Et,n`
     :host {
       display: block;
     }
@@ -938,4 +938,4 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,S=A?A.createPolicy("lit-html",{create
       color: var(--primary-text-color);
       opacity: 0.85;
     }
-  `],customElements.get(mt)||customElements.define(mt,Gt);export{Gt as HausCard};
+  `],customElements.get(mt)||customElements.define(mt,Vt);export{Vt as HausCard};

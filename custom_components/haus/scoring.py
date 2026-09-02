@@ -126,7 +126,7 @@ def _advanced_score(signals: UsageSignals) -> float:
     return 100.0 * len(present) / len(ADVANCED_FEATURES)
 
 
-def usage_details(signals: UsageSignals) -> dict[str, int]:
+def usage_details(signals: UsageSignals) -> dict[str, Any]:
     """Return the raw usage counts, and the window they are judged over.
 
     The metrics are curves - sixty-one automations saturate to 99 - so a card
@@ -143,6 +143,15 @@ def usage_details(signals: UsageSignals) -> dict[str, int]:
         "notification_count": signals.notification_count,
         "notification_history_days": signals.notification_history_days,
         "window_days": USAGE_WINDOW_DAYS,
+        # The knee of each saturating metric, so the card's "?" copy can quote
+        # it rather than describe the shape in prose. Prose drifts silently
+        # when a k is retuned; a published number moves with it.
+        "curve_knees": {
+            "automation_count": K_AUTOMATION_COUNT,
+            "scripts_scenes": K_SCRIPT_SCENE_COUNT,
+            "helpers": K_HELPER_COUNT,
+            "notifications": K_NOTIFICATION_COUNT,
+        },
     }
 
 
@@ -232,7 +241,7 @@ def _share_of_accounts(count: int, active_accounts: int) -> float:
     return 100.0 * min(count, active_accounts) / active_accounts
 
 
-def users_details(signals: UsersSignals) -> dict[str, int]:
+def users_details(signals: UsersSignals) -> dict[str, Any]:
     """Return the raw household counts behind the users pillar.
 
     The metric scores are curves: four accounts saturate to 86. A card that
@@ -246,6 +255,8 @@ def users_details(signals: UsersSignals) -> dict[str, int]:
         "users_active_7d": signals.users_active_7d,
         "users_active_30d": signals.users_active_30d,
         "activity_history_days": signals.activity_history_days,
+        # Only the accounts metric is a curve here; the other three are shares.
+        "curve_knees": {"accounts": K_ACTIVE_ACCOUNTS},
     }
 
 
