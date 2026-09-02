@@ -342,6 +342,12 @@ npm run capture        # regenerate the README screenshots
 
 `npm run test:e2e` needs a browser once: `npx playwright install chromium`.
 
+The brand images in `custom_components/haus/brand/` are generated too -
+`uv run python scripts/make_brand_images.py` - from the same pillar colours and
+weights the ring is drawn from, so the mark cannot drift away from the card.
+The wordmark half needs a macOS system font; the icon half is pure geometry and
+runs anywhere.
+
 CI fails if the committed `www/` artifact does not match a fresh build, so the
 file users install is always the file the source produces. The README
 screenshots come from that same artifact through the layout-test harness, so
