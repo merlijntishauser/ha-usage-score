@@ -1,10 +1,13 @@
 """Tests for the HAUS config flow."""
 
 from homeassistant.config_entries import SOURCE_USER, ConfigEntryState
+from homeassistant.core import DOMAIN as HOMEASSISTANT_DOMAIN
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.haus import CONFIG_SCHEMA
 from custom_components.haus.const import (
     CONF_EXPOSE_PER_USER_DETAIL,
     CONF_HAGHS_ENTITY_ID,
@@ -129,3 +132,31 @@ async def test_the_haghs_entity_id_can_be_pointed_somewhere_else(
     await hass.async_block_till_done()
 
     assert entry.options[CONF_HAGHS_ENTITY_ID] == "sensor.house_health"
+
+
+async def test_a_haus_block_in_yaml_raises_a_repair_issue(hass: HomeAssistant) -> None:
+    """HAUS is set up from the UI and reads nothing from YAML.
+
+    async_setup exists to register the websocket command and the frontend -
+    the parts that happen once rather than once per entry - which is what
+    makes hassfest ask for a CONFIG_SCHEMA in the first place.
+    """
+    CONFIG_SCHEMA({DOMAIN: {"anything": 1}})
+
+    issue = ir.async_get(hass).async_get_issue(
+        HOMEASSISTANT_DOMAIN, f"config_entry_only_{DOMAIN}"
+    )
+    assert issue is not None
+    assert issue.severity == ir.IssueSeverity.ERROR
+
+
+async def test_a_config_without_a_haus_block_is_left_alone(hass: HomeAssistant) -> None:
+    """The schema is a guard, not a transformation."""
+    assert CONFIG_SCHEMA({"other_integration": {}}) == {"other_integration": {}}
+
+    assert (
+        ir.async_get(hass).async_get_issue(
+            HOMEASSISTANT_DOMAIN, f"config_entry_only_{DOMAIN}"
+        )
+        is None
+    )

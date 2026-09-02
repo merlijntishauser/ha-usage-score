@@ -17,18 +17,26 @@ from homeassistant.core import (
     HomeAssistant,
     callback,
 )
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
-from .const import HAGHS_DOMAIN, NOTIFY_DOMAIN
+from .const import DOMAIN, HAGHS_DOMAIN, NOTIFY_DOMAIN
 from .coordinator import HausConfigEntry, HausCoordinator
 from .frontend import async_register as async_register_frontend
 from .store import HausStore
 from .websocket import async_register as async_register_websocket
 
 PLATFORMS = [Platform.SENSOR]
+
+# async_setup exists to register the websocket command and the frontend - the
+# parts that happen once rather than once per entry - which is what makes
+# hassfest ask for a schema. HAUS reads nothing from YAML, so a `haus:` block
+# is a mistake, and this says so with a repair issue rather than silently
+# ignoring it.
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
