@@ -114,3 +114,58 @@ describe("haus-spread-card", () => {
     expect(text(card)).toContain("sensor.haus_diversity");
   });
 });
+
+const MANY = {
+  groups_covered: [
+    "presence", "appliance", "energy", "media", "notify", "storage",
+    "air_quality", "calendar", "camera", "climate", "lighting", "network",
+    "voice",
+  ],
+  groups_missing: ["lock", "vacuum"],
+  evenness: 0.96,
+  target_groups: 20,
+  group_counts: {
+    presence: 4, appliance: 2, energy: 2, media: 2, notify: 2, storage: 2,
+    air_quality: 1, calendar: 1, camera: 1, climate: 1, lighting: 1,
+    network: 1, voice: 1,
+  },
+};
+
+describe("reading the stacked bar", () => {
+  it("separates neighbouring segments so the bar is not one block", async () => {
+    const card = await render(makeHass(MANY));
+
+    const segments = Array.from(
+      card.shadowRoot?.querySelectorAll(".stack-segment") ?? [],
+    );
+
+    for (const segment of segments) {
+      expect(segment.getAttribute("style")).toContain("box-shadow");
+    }
+  });
+
+  it("gives every segment a distinct shade", async () => {
+    const card = await render(makeHass(MANY));
+
+    const opacities = Array.from(
+      card.shadowRoot?.querySelectorAll<HTMLElement>(".stack-segment") ?? [],
+    ).map((el) => Number(el.style.opacity));
+
+    expect(new Set(opacities).size).toBe(opacities.length);
+    expect(Math.min(...opacities)).toBeLessThan(0.6);
+  });
+
+  it("folds the tail into one clearly labelled remainder", async () => {
+    const card = await render(makeHass(MANY));
+
+    // 13 groups, 10 drawn, so three fold into the remainder.
+    expect(text(card)).toContain("+3 more");
+    expect(text(card)).not.toMatch(/\b3 more 3\b/);
+  });
+
+  it("names the coverage target the score is built on", async () => {
+    const card = await render(makeHass(MANY));
+
+    expect(text(card)).toContain("20");
+  });
+});

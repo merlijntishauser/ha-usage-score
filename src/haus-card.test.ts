@@ -235,3 +235,13 @@ describe("missing entity", () => {
     expect(text(card)).toContain("sensor.haus_score");
   });
 });
+
+describe("card structure", () => {
+  it("keeps the footer inside the same ha-card as the ring", async () => {
+    const card = await renderCard(makeHass(FULL_ATTRIBUTES));
+
+    expect(card.shadowRoot?.querySelectorAll("ha-card")).toHaveLength(1);
+    expect(card.shadowRoot?.querySelector("ha-card .footer")).toBeTruthy();
+    expect(card.shadowRoot?.querySelector("ha-card .hero")).toBeTruthy();
+  });
+});

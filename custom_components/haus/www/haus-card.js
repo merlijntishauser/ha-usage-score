@@ -466,13 +466,18 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,E=A?A.createPolicy("lit-html",{create
             integration set up?
           </div>
         </ha-card>
-      `;const i=s.groups_covered??[],r=s.groups_missing??[],n=s.evenness,a=s.group_counts??{};return L`
+      `;const i=s.groups_covered??[],r=s.groups_missing??[],n=s.evenness,a=s.group_counts??{},o=s.target_groups;return L`
       <ha-card>
         <div class="pad">
           <div class="figures">
             <div class="figure">
-              <div class="num">${i.length} of ${i.length+r.length}</div>
+              <div class="num">
+                ${i.length} of ${i.length+r.length}
+              </div>
               <div class="label">groups covered</div>
+              ${void 0===o?V:L`<div class="caption">
+                    ${i.length>=Number(o)?`${o}-group target reached`:`towards a ${o}-group target`}
+                  </div>`}
             </div>
             <div class="figure">
               <div class="num">${n??"—"}</div>
@@ -490,22 +495,24 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,E=A?A.createPolicy("lit-html",{create
       </ha-card>
     `}_stack(t){const e=Object.entries(t).sort((t,e)=>e[1]-t[1]),s=e.reduce((t,[,e])=>t+e,0);if(0===s)return L`<p class="note">
         No integrations are classified yet, so there is no spread to show.
-      </p>`;const i=e.slice(0,10),r=e.slice(10);return r.length>0&&i.push([`${r.length} more`,r.reduce((t,[,e])=>t+e,0)]),L`
+      </p>`;const i=e.slice(0,10).map(([t,e])=>({label:t,count:e,remainder:!1})),r=e.slice(10);r.length>0&&i.push({label:`+${r.length} more`,count:r.reduce((t,[,e])=>t+e,0),remainder:!0});const n=.6/Math.max(1,i.length);return L`
       <div class="stack" role="img" aria-label="Config entries per group">
-        ${i.map(([t,e],r)=>L`
+        ${i.map((t,e)=>L`
             <span
               class="stack-segment"
-              title="${t}: ${e}"
-              style="width:${e/s*100}%;background:${dt.diversity};opacity:${1-r*(.6/Math.max(1,i.length))}"
+              title="${t.label}: ${t.count}"
+              style="width:${t.count/s*100}%;
+                     background:${dt.diversity};
+                     opacity:${1-e*n};
+                     box-shadow: inset -1px 0 0 var(--card-background-color)"
             ></span>
           `)}
       </div>
       <div class="legend">
-        ${i.map(([t,e])=>L`<span class="legend-item"
-            >${t} <b>${e}</b></span
-          >`)}
+        ${i.map(t=>t.remainder?L`<span class="legend-item remainder">${t.label}</span>`:L`<span class="legend-item"
+                >${t.label} <b>${t.count}</b></span
+              >`)}
       </div>
-      ${V}
     `}}Rt.styles=n`
     :host {
       display: block;
@@ -532,6 +539,11 @@ const b=globalThis,w=t=>t,A=b.trustedTypes,E=A?A.createPolicy("lit-html",{create
     .figure .label {
       font-size: 12px;
       color: var(--secondary-text-color);
+    }
+    .figure .caption {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      opacity: 0.8;
     }
     .stack {
       display: flex;

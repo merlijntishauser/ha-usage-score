@@ -56,14 +56,24 @@ export class HausSpreadCard extends HausCardBase {
     const missing = (attributes["groups_missing"] ?? []) as string[];
     const evenness = attributes["evenness"];
     const counts = (attributes["group_counts"] ?? {}) as Record<string, number>;
+    const target = attributes["target_groups"];
 
     return html`
       <ha-card>
         <div class="pad">
           <div class="figures">
             <div class="figure">
-              <div class="num">${covered.length} of ${covered.length + missing.length}</div>
+              <div class="num">
+                ${covered.length} of ${covered.length + missing.length}
+              </div>
               <div class="label">groups covered</div>
+              ${target === undefined
+                ? nothing
+                : html`<div class="caption">
+                    ${covered.length >= Number(target)
+                      ? `${target}-group target reached`
+                      : `towards a ${target}-group target`}
+                  </div>`}
             </div>
             <div class="figure">
               <div class="num">${evenness ?? "—"}</div>
@@ -94,39 +104,49 @@ export class HausSpreadCard extends HausCardBase {
       </p>`;
     }
 
-    const head = ordered.slice(0, MAX_SEGMENTS);
+    const drawn: { label: string; count: number; remainder: boolean }[] =
+      ordered.slice(0, MAX_SEGMENTS).map(([label, count]) => ({
+        label,
+        count,
+        remainder: false,
+      }));
     const tail = ordered.slice(MAX_SEGMENTS);
     if (tail.length > 0) {
-      head.push([
-        `${tail.length} more`,
-        tail.reduce((sum, [, count]) => sum + count, 0),
-      ]);
+      drawn.push({
+        label: `+${tail.length} more`,
+        count: tail.reduce((sum, [, count]) => sum + count, 0),
+        remainder: true,
+      });
     }
 
-    // The palette carries pillar meaning, so the stack is drawn in the
-    // diversity colour at varying opacity rather than inventing new hues.
+    // The palette carries pillar meaning, so the stack stays in the diversity
+    // colour and separates by shade. The inset shadow draws a boundary between
+    // neighbours: with a dozen small groups the shades alone read as one block.
+    const step = 0.6 / Math.max(1, drawn.length);
     return html`
       <div class="stack" role="img" aria-label="Config entries per group">
-        ${head.map(
-          ([group, count], index) => html`
+        ${drawn.map(
+          (segment, index) => html`
             <span
               class="stack-segment"
-              title="${group}: ${count}"
-              style="width:${(count / total) * 100}%;background:${PILLAR_COLORS[
-                "diversity"
-              ]};opacity:${1 - index * (0.6 / Math.max(1, head.length))}"
+              title="${segment.label}: ${segment.count}"
+              style="width:${(segment.count / total) * 100}%;
+                     background:${PILLAR_COLORS["diversity"]};
+                     opacity:${1 - index * step};
+                     box-shadow: inset -1px 0 0 var(--card-background-color)"
             ></span>
           `,
         )}
       </div>
       <div class="legend">
-        ${head.map(
-          ([group, count]) => html`<span class="legend-item"
-            >${group} <b>${count}</b></span
-          >`,
+        ${drawn.map((segment) =>
+          segment.remainder
+            ? html`<span class="legend-item remainder">${segment.label}</span>`
+            : html`<span class="legend-item"
+                >${segment.label} <b>${segment.count}</b></span
+              >`,
         )}
       </div>
-      ${nothing}
     `;
   }
 
@@ -156,6 +176,11 @@ export class HausSpreadCard extends HausCardBase {
     .figure .label {
       font-size: 12px;
       color: var(--secondary-text-color);
+    }
+    .figure .caption {
+      font-size: 11px;
+      color: var(--secondary-text-color);
+      opacity: 0.8;
     }
     .stack {
       display: flex;
