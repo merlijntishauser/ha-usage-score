@@ -28,9 +28,19 @@ export interface HassEntity {
   readonly attributes: Record<string, unknown>;
 }
 
+export interface HausUserActivity {
+  readonly user_id: string;
+  readonly name: string | null;
+  readonly actions_7d: number;
+  readonly actions_30d: number;
+  readonly last_active: string | null;
+}
+
 export interface HomeAssistant {
   readonly states: Record<string, HassEntity | undefined>;
   readonly themes?: unknown;
+  /** Present in the real frontend; optional so tests and previews can omit it. */
+  readonly callWS?: <T>(message: Record<string, unknown>) => Promise<T>;
 }
 
 export interface HausCardConfig {
