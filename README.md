@@ -34,8 +34,8 @@ Under construction, built in vertical slices.
 | M4 - hygiene pillar consumed from HAGHS | done |
 | M5 - the bundled `haus-card`, hero and degraded states | done |
 | M6 - breakdown, detail cards, badge and tile | done |
-| M7 - community percentile, opt-in and off by default | next |
-| M8 - docs, HACS default submission, brands PR | |
+| M7 - community comparison against the published averages | done |
+| M8 - docs, HACS default submission, brands PR | next |
 
 All four pillars are live, and the card draws them.
 
@@ -131,6 +131,28 @@ Missing, `unknown`, `unavailable`, non-numeric, or pointed at the wrong entity
 all mean **absent**, never zero. A dependency that briefly restarts must not
 tank the score, so the pillar is dropped and the other three renormalise over
 their own weight sum. The entity id is an option, because users rename things.
+
+## The community comparison
+
+The breakdown card puts two of your numbers beside the community average:
+automations, and accounts. Home Assistant publishes those figures at
+[analytics.home-assistant.io](https://analytics.home-assistant.io/data.json),
+averaged over the installs that opt into statistics reporting.
+
+**It is a comparison with a mean, not a percentile.** Home Assistant publishes
+averages and no distribution of any kind, so there is no honest way to say what
+share of installs you are ahead of, and the card does not pretend otherwise.
+
+The figures are bundled with the release and stamped with the date they were
+taken, rather than downloaded. The analytics document is 1 MB gzipped, has no
+lighter endpoint and ignores conditional requests, which is a poor trade for
+two integers that change slowly. Nothing leaves your instance, so there is
+nothing to opt into.
+
+Integration counts are deliberately not compared. Home Assistant counts loaded
+built-in integrations and excludes custom ones; the diversity pillar counts
+distinct config-entry domains and includes them. The two numbers do not measure
+the same thing.
 
 ## The card
 
