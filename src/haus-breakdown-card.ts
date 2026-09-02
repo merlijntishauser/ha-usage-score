@@ -11,8 +11,55 @@ import type { TemplateResult } from "lit";
 
 import { HausCardBase, headerStyles, pillarEntityId } from "./base";
 import { BREAKDOWN_CARD_TYPE, PILLARS, PILLAR_COLORS, PILLAR_LABELS } from "./const";
+import type { ExplanationContext } from "./explanations";
+import { explain } from "./explanations";
 import { scoreArithmetic } from "./insights";
 import type { HausCardConfig, HomeAssistant } from "./types";
+
+/**
+ * How to phrase the raw count behind a metric.
+ *
+ * The metrics are curves - 61 automations saturate to 99 - so the count is
+ * spelled out next to the score rather than left to be misread as one.
+ */
+const COUNTS: Readonly<
+  Record<string, (details: Record<string, unknown>) => string | undefined>
+> = {
+  fire_rate: (d) =>
+    d["automations_defined"] === undefined
+      ? undefined
+      : `${d["automations_fired"]} of ${d["automations_defined"]} fired`,
+  automation_count: (d) =>
+    d["automations_defined"] === undefined
+      ? undefined
+      : `${d["automations_defined"]} defined`,
+  scripts_scenes: (d) =>
+    d["scripts_and_scenes_defined"] === undefined
+      ? undefined
+      : `${d["scripts_and_scenes_used"]} of ${d["scripts_and_scenes_defined"]} used`,
+  helpers: (d) =>
+    d["helper_count"] === undefined ? undefined : `${d["helper_count"]} helpers`,
+  notifications: (d) =>
+    d["notification_count"] === undefined
+      ? undefined
+      : `${d["notification_count"]} sent`,
+  accounts: (d) =>
+    d["active_accounts"] === undefined
+      ? undefined
+      : `${d["active_accounts"]} accounts`,
+  mobile_apps: (d) =>
+    d["mobile_app_devices"] === undefined
+      ? undefined
+      : `${d["mobile_app_devices"]} registered`,
+  activity_7d: (d) =>
+    d["users_active_7d"] === undefined
+      ? undefined
+      : `${d["users_active_7d"]} people`,
+  activity_30d: (d) =>
+    d["users_active_30d"] === undefined
+      ? undefined
+      : `${d["users_active_30d"]} people`,
+};
 
 /** Human labels for the sub-metrics each pillar publishes. */
 const METRIC_LABELS: Readonly<Record<string, string>> = {
@@ -30,6 +77,9 @@ const METRIC_LABELS: Readonly<Record<string, string>> = {
 
 export class HausBreakdownCard extends HausCardBase {
   protected override readonly defaultTitle = "Score breakdown";
+
+  /** Metric keys whose explanation is currently open. */
+  private readonly _open = new Set<string>();
   protected readonly cardName = BREAKDOWN_CARD_TYPE;
 
   protected override watchedEntityIds(): string[] {
@@ -47,6 +97,55 @@ export class HausBreakdownCard extends HausCardBase {
 
   static getConfigElement(): HTMLElement {
     return document.createElement("haus-card-editor");
+  }
+
+  private _explanationContext(): ExplanationContext {
+    const usage = this._pillarEntity("usage") ?? {};
+    const diversity = this._pillarEntity("diversity") ?? {};
+    const context: ExplanationContext = {};
+    return {
+      ...context,
+      ...(typeof usage["window_days"] === "number"
+        ? { windowDays: usage["window_days"] }
+        : {}),
+      ...(typeof diversity["target_groups"] === "number"
+        ? { targetGroups: diversity["target_groups"] }
+        : {}),
+    };
+  }
+
+  private _toggle(key: string): void {
+    if (this._open.has(key)) {
+      this._open.delete(key);
+    } else {
+      this._open.add(key);
+    }
+    this.requestUpdate();
+  }
+
+  /** A "?" pill plus, when open, the explanation beneath its row. */
+  private _help(key: string, label: string): TemplateResult | typeof nothing {
+    if (explain(key, this._explanationContext()) === undefined) {
+      return nothing;
+    }
+    return html`<button
+      class="help"
+      type="button"
+      aria-label="How ${label} is calculated"
+      aria-expanded="${this._open.has(key) ? "true" : "false"}"
+      @click=${() => this._toggle(key)}
+    >
+      ?
+    </button>`;
+  }
+
+  private _explanation(key: string): TemplateResult | typeof nothing {
+    if (!this._open.has(key)) {
+      return nothing;
+    }
+    return html`<p class="explanation">
+      ${explain(key, this._explanationContext())}
+    </p>`;
   }
 
   private _pillarEntity(pillar: string): Record<string, unknown> | undefined {
@@ -104,7 +203,9 @@ export class HausBreakdownCard extends HausCardBase {
       <section class="pillar ${absent ? "ghost" : ""}">
         <header>
           <span class="swatch" style="background:${PILLAR_COLORS[pillar]}"></span>
-          <span class="name">${PILLAR_LABELS[pillar]}</span>
+          <span class="name">
+            ${PILLAR_LABELS[pillar]} ${this._help(pillar, PILLAR_LABELS[pillar])}
+          </span>
           <span class="value">
             ${absent ? "unavailable" : Math.round(raw)}
           </span>
@@ -112,6 +213,7 @@ export class HausBreakdownCard extends HausCardBase {
             ${weight === undefined ? "—" : `${Math.round(weight * 100)}%`}
           </span>
         </header>
+        ${this._explanation(pillar)}
         ${absent ? nothing : this._signals(pillar)}
       </section>
     `;
@@ -122,7 +224,7 @@ export class HausBreakdownCard extends HausCardBase {
       return this._diversitySignals();
     }
     if (pillar === "hygiene") {
-      return html`<div class="signal">
+      return html`<div class="note-row">
         <span>Consumed from HAGHS, never recomputed</span>
       </div>`;
     }
@@ -130,26 +232,33 @@ export class HausBreakdownCard extends HausCardBase {
     const metrics = (attributes?.["metrics"] ?? {}) as Record<string, number>;
     const entries = Object.entries(metrics);
     if (entries.length === 0) {
-      return html`<div class="signal muted">
+      return html`<div class="note-row muted">
         <span>Signals unavailable - is sensor.haus_${pillar} enabled?</span>
       </div>`;
     }
+    const details = attributes ?? {};
     return html`
-      ${entries.map(
-        ([key, value]) => html`
+      ${entries.map(([key, value]) => {
+        const label = METRIC_LABELS[key] ?? key;
+        const count = COUNTS[key]?.(details);
+        return html`
           <div class="signal">
-            <span>${METRIC_LABELS[key] ?? key}</span>
-            <span class="num">${Math.round(value)}</span>
+            <span>${label} ${this._help(key, label)}</span>
+            <span class="num">
+              ${count === undefined ? nothing : html`<i>${count}</i>`}
+              ${Math.round(value)}
+            </span>
           </div>
-        `,
-      )}
+          ${this._explanation(key)}
+        `;
+      })}
     `;
   }
 
   private _diversitySignals(): TemplateResult {
     const attributes = this._pillarEntity("diversity");
     if (attributes === undefined) {
-      return html`<div class="signal muted">
+      return html`<div class="note-row muted">
         <span>Signals unavailable - is sensor.haus_diversity enabled?</span>
       </div>`;
     }
@@ -158,15 +267,19 @@ export class HausBreakdownCard extends HausCardBase {
     const evenness = attributes["evenness"];
     return html`
       <div class="signal">
-        <span>Groups covered</span>
-        <span class="num">${covered.length} of ${covered.length + missing.length}</span>
+        <span>Groups covered ${this._help("groups_covered", "groups covered")}</span>
+        <span class="num">
+          ${covered.length} of ${covered.length + missing.length}
+        </span>
       </div>
+      ${this._explanation("groups_covered")}
       <div class="signal">
-        <span>Evenness</span>
+        <span>Evenness ${this._help("evenness", "evenness")}</span>
         <span class="num">${evenness ?? "—"}</span>
       </div>
+      ${this._explanation("evenness")}
       ${missing.length > 0
-        ? html`<div class="signal missing-groups">
+        ? html`<div class="note-row missing-groups">
             <span>Nothing in</span>
             <span class="num">${missing.join(", ")}</span>
           </div>`
@@ -225,7 +338,8 @@ export class HausBreakdownCard extends HausCardBase {
     .ghost .swatch {
       opacity: 0.35;
     }
-    .signal {
+    .signal,
+    .note-row {
       display: flex;
       justify-content: space-between;
       gap: 12px;
@@ -243,6 +357,39 @@ export class HausBreakdownCard extends HausCardBase {
     }
     .muted {
       font-style: italic;
+    }
+    .help {
+      appearance: none;
+      border: 1px solid var(--divider-color);
+      background: transparent;
+      color: var(--secondary-text-color);
+      font: inherit;
+      font-size: 10px;
+      line-height: 1;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .help:hover,
+    .help:focus-visible {
+      color: var(--primary-text-color);
+      border-color: var(--primary-text-color);
+    }
+    .signal .num i {
+      font-style: normal;
+      color: var(--secondary-text-color);
+      margin-right: 8px;
+    }
+    .explanation {
+      margin: 2px 0 8px;
+      padding: 8px 10px;
+      border-left: 2px solid var(--divider-color);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--secondary-text-color);
     }
   `,
   ];

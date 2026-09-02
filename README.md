@@ -186,6 +186,13 @@ by default - a card that opens straight into numbers gives the reader nothing
 to anchor on - and `title: ""` hides the header where the dashboard already
 has a heading above it.
 
+Every signal on the breakdown card carries a **`?` pill**: press it and the
+card explains how that number is arrived at, in place. The copy quotes only
+values the integration publishes - the window, the coverage target - so an
+explanation cannot drift away from the code when a constant is retuned.
+Counts sit next to scores there too: 61 automations score 99, and the card
+says both rather than leaving 99 to be misread as a count.
+
 The breakdown card exists to answer one objection directly: that the score is a
 magic number. It prints `71 = floor(.30*84 + .30*70 + .25*61 + .15*66)` using
 the weights actually in force, so the number can always be taken apart.

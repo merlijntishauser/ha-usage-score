@@ -25,6 +25,14 @@ function makeHass(degraded = false): HomeAssistant {
         contributions: {},
       }),
       "sensor.haus_usage": entity("sensor.haus_usage", "70", {
+        automations_defined: 61,
+        automations_fired: 34,
+        scripts_and_scenes_defined: 178,
+        scripts_and_scenes_used: 13,
+        helper_count: 40,
+        notification_count: 88,
+        notification_history_days: 3,
+        window_days: 30,
         metrics: {
           fire_rate: 55.5,
           automation_count: 88,
@@ -35,11 +43,17 @@ function makeHass(degraded = false): HomeAssistant {
         },
       }),
       "sensor.haus_diversity": entity("sensor.haus_diversity", "61", {
+        target_groups: 20,
         groups_covered: ["lighting", "climate"],
         groups_missing: ["vacuum", "lock", "printer"],
         evenness: 0.96,
       }),
       "sensor.haus_users": entity("sensor.haus_users", "66", {
+        active_accounts: 4,
+        mobile_app_devices: 3,
+        users_active_7d: 2,
+        users_active_30d: 3,
+        activity_history_days: 9,
         metrics: {
           accounts: 86.5,
           mobile_apps: 100,
@@ -167,5 +181,84 @@ describe("card title", () => {
     expect(card.shadowRoot?.querySelector(".card-header")?.textContent).toContain(
       "Score breakdown",
     );
+  });
+});
+
+describe("help pills", () => {
+  it("offers a help pill on every signal", async () => {
+    const card = await render(makeHass());
+
+    const signals = card.shadowRoot?.querySelectorAll(".signal") ?? [];
+    const pills = card.shadowRoot?.querySelectorAll(".signal .help") ?? [];
+
+    // Every measured signal is explainable; prose rows are `.note-row`.
+    expect(pills.length).toBe(signals.length);
+    expect(pills.length).toBeGreaterThan(5);
+  });
+
+  it("labels each pill for a screen reader", async () => {
+    const card = await render(makeHass());
+
+    const pill = card.shadowRoot?.querySelector(".help");
+
+    expect(pill?.getAttribute("aria-label")).toMatch(/how .* is calculated/i);
+    expect(pill?.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("reveals the explanation when the pill is pressed", async () => {
+    const card = await render(makeHass());
+
+    expect(card.shadowRoot?.querySelector(".explanation")).toBeNull();
+    card.shadowRoot?.querySelector<HTMLElement>(".help")?.click();
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector(".explanation")).toBeTruthy();
+  });
+
+  it("hides it again when pressed a second time", async () => {
+    const card = await render(makeHass());
+    const pill = card.shadowRoot?.querySelector<HTMLElement>(".help");
+
+    pill?.click();
+    await card.updateComplete;
+    card.shadowRoot?.querySelector<HTMLElement>(".help")?.click();
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector(".explanation")).toBeNull();
+  });
+
+  it("quotes the window the integration published", async () => {
+    const card = await render(makeHass());
+
+    card.shadowRoot
+      ?.querySelector<HTMLElement>('[aria-label="How Fire rate is calculated"]')
+      ?.click();
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector(".explanation")?.textContent).toContain(
+      "30 days",
+    );
+  });
+
+  it("explains the pillars too, not only their signals", async () => {
+    const card = await render(makeHass());
+
+    expect(
+      card.shadowRoot?.querySelectorAll(".pillar header .help").length,
+    ).toBe(4);
+  });
+});
+
+describe("counts alongside scores", () => {
+  it("shows how many automations there are, not just their score", async () => {
+    const card = await render(makeHass());
+
+    expect(text(card)).toContain("34 of 61 fired");
+  });
+
+  it("shows the household counts too", async () => {
+    const card = await render(makeHass());
+
+    expect(text(card)).toContain("4 accounts");
   });
 });
