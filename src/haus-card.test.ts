@@ -46,7 +46,7 @@ async function renderCard(
   hass: HomeAssistant,
   config: Record<string, unknown> = { type: "custom:haus-card" },
 ): Promise<HausCard> {
-  const card = document.createElement("haus-card") as HausCard;
+  const card = document.createElement("haus-card") as unknown as HausCard;
   card.setConfig(config as never);
   card.hass = hass;
   document.body.appendChild(card);
@@ -75,7 +75,7 @@ function markup(card: HausCard): string {
 
 describe("setConfig", () => {
   it("defaults to the standard score entity", () => {
-    const card = document.createElement("haus-card") as HausCard;
+    const card = document.createElement("haus-card") as unknown as HausCard;
 
     card.setConfig({ type: "custom:haus-card" });
 
@@ -83,14 +83,14 @@ describe("setConfig", () => {
   });
 
   it("rejects a non-string entity with a message that says what to do", () => {
-    const card = document.createElement("haus-card") as HausCard;
+    const card = document.createElement("haus-card") as unknown as HausCard;
 
     expect(() => card.setConfig({ type: "custom:haus-card", entity: 7 } as never))
       .toThrowError(/entity/i);
   });
 
   it("rejects an entity that is not a sensor", () => {
-    const card = document.createElement("haus-card") as HausCard;
+    const card = document.createElement("haus-card") as unknown as HausCard;
 
     expect(() =>
       card.setConfig({ type: "custom:haus-card", entity: "light.kitchen" } as never),

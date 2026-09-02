@@ -6,12 +6,12 @@
  * pillar to go and fix.
  */
 
-import { LitElement, css, html, nothing, svg } from "lit";
+import { css, html, nothing, svg } from "lit";
 import type { TemplateResult } from "lit";
 
+import { HausCardBase } from "./base";
 import {
   CARD_TYPE,
-  DEFAULT_ENTITY,
   PILLARS,
   PILLAR_COLORS,
   PILLAR_LABELS,
@@ -25,67 +25,14 @@ import {
 import "./haus-card-editor";
 import { nextAction } from "./insights";
 import { ringGeometry } from "./ring";
-import type {
-  HausCardConfig,
-  HausHistoryPoint,
-  HausScoreAttributes,
-  HassEntity,
-  HomeAssistant,
-} from "./types";
+import type { HausCardConfig, HausHistoryPoint } from "./types";
 
 const CENTRE = RING_SIZE / 2;
 const SPARKLINE_WIDTH = 168;
 const SPARKLINE_HEIGHT = 28;
 
-export class HausCard extends LitElement {
-  private _entityId: string = DEFAULT_ENTITY;
-  private _hass: HomeAssistant | undefined;
-  private _entityState: HassEntity | undefined;
-
-  /** Validate and store the card configuration. */
-  setConfig(config: HausCardConfig): void {
-    const entity: unknown = config?.entity;
-    if (entity !== undefined) {
-      if (typeof entity !== "string") {
-        throw new Error(
-          'haus-card: "entity" must be an entity id, for example sensor.haus_score',
-        );
-      }
-      if (!entity.startsWith("sensor.")) {
-        throw new Error(
-          `haus-card: "${entity}" is not a sensor. Point "entity" at the HAUS ` +
-            "score sensor, for example sensor.haus_score",
-        );
-      }
-    }
-    this._entityId = (entity as string | undefined) ?? DEFAULT_ENTITY;
-  }
-
-  /** The entity this card reads, after defaulting. */
-  getConfigEntity(): string {
-    return this._entityId;
-  }
-
-  /**
-   * Only re-render when the entity this card depends on actually changed.
-   *
-   * `hass` is reassigned on every state change anywhere in the instance; a
-   * card that re-renders on all of them is a card that makes dashboards feel
-   * slow.
-   */
-  set hass(hass: HomeAssistant) {
-    const next = hass.states[this._entityId];
-    this._hass = hass;
-    if (next === this._entityState) {
-      return;
-    }
-    this._entityState = next;
-    this.requestUpdate();
-  }
-
-  get hass(): HomeAssistant | undefined {
-    return this._hass;
-  }
+export class HausCard extends HausCardBase {
+  protected readonly cardName = CARD_TYPE;
 
   getCardSize(): number {
     return 5;
@@ -100,19 +47,19 @@ export class HausCard extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const state = this._entityState;
+    const state = this.entityState;
     if (state === undefined) {
       return html`
         <ha-card>
           <div class="pad missing">
-            Entity <code>${this._entityId}</code> was not found. Is the HAUS
+            Entity <code>${this.getConfigEntity()}</code> was not found. Is the HAUS
             integration set up?
           </div>
         </ha-card>
       `;
     }
 
-    const attributes = state.attributes as unknown as HausScoreAttributes;
+    const attributes = this.scoreAttributes;
     const weights = attributes.effective_weights ?? {};
     const contributions = attributes.contributions ?? {};
     const pillars = attributes.pillars ?? {
