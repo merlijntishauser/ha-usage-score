@@ -22,9 +22,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # The brands check cannot pass until the home-assistant/brands PR for
-          # the `haus` domain is merged (M8). Drop this line at that point.
-          ignore: brands
 
   python:
     name: lint, types and tests
