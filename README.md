@@ -35,9 +35,15 @@ Under construction, built in vertical slices.
 | M5 - the bundled `haus-card`, hero and degraded states | done |
 | M6 - breakdown, detail cards, badge and tile | done |
 | M7 - community comparison against the published averages | done |
-| M8 - docs, HACS default submission, brands PR | next |
+| M8 - docs, screenshots and HACS default submission | in progress |
 
 All four pillars are live, and the card draws them.
+
+## What it does not do
+
+- It does not recompute hygiene. That is HAGHS's job.
+- It is not a config linter. `thewatchman` and `ha-config-auditor` do that.
+- No cloud service, no account, no telemetry. Nothing leaves the instance.
 
 ### The usage pillar
 
@@ -65,12 +71,6 @@ quiet house still leaves the neutral start behind.
 from a blueprint cannot be told from the entity registry or from state; it means
 reading configuration off disk, which the collectors do not do. The metric is a
 share of the other three.
-
-## What it does not do
-
-- It does not recompute hygiene. That is HAGHS's job.
-- It is not a config linter. `thewatchman` and `ha-config-auditor` do that.
-- No cloud service, no account, no telemetry. Nothing leaves the instance.
 
 ### The diversity pillar
 
@@ -167,6 +167,18 @@ The hero card is a segmented ring whose arc lengths are **the points each pillar
 actually contributed**, not their raw scores - so the gap to a full circle is
 the unearned points, colour-coded by which pillar to go and fix.
 
+![The HAUS hero card](docs/images/hero.png)
+
+It carries **no title by default**, while the three detail cards name
+themselves. The ring, the score and the tier already say what the card is, and
+a header would push the ring down for nothing. Set `title:` in the card config
+if your dashboard wants one.
+
+In a column narrower than 448px the ring and the pillar rows stack, and the
+ring centres itself rather than sitting against a void:
+
+![The hero card in a narrow column](docs/images/hero-narrow.png)
+
 The pillar palette is fixed, and deliberately not themed: the colours carry
 meaning, and a theme that recoloured them would destroy it. Everything else -
 surfaces, text, dividers, tracks - uses your theme's variables.
@@ -182,7 +194,10 @@ surfaces, text, dividers, tracks - uses your theme's variables.
 reading `unavailable`, with the renormalised weights shown and one single-line
 explanation in the footer. A card that silently drops a row teaches people the
 pillar never existed; a card that shouts about a missing dependency gets deleted
-from the dashboard. One nag, maximum.
+from the dashboard. One nag, maximum - and it is a maximum, so on a fresh
+install the "building history" line gives way to it rather than stacking.
+
+![The hero card with HAGHS absent](docs/images/hero-degraded.png)
 
 The footer's sparkline is twelve weekly snapshots that HAUS keeps itself, for
 the same reason it tallies notifications itself: the recorder may be absent, may
@@ -203,6 +218,20 @@ same palette, so a dashboard using several still reads as one system.
 | `custom:haus-badge` | 26px ring plus the score |
 | `custom:haus-tile` | Score, tier and a 5px contribution strip |
 
+![The breakdown card](docs/images/breakdown.png)
+
+![The integration spread card](docs/images/spread.png)
+
+![The household card](docs/images/household.png)
+
+The compact pair keep the same four-colour composition, which is the whole
+reason the ring is segmented rather than drawn as one arc - the shape has to be
+recognisable at 26px as well as at 176:
+
+![The badge](docs/images/badge.png)
+
+![The tile](docs/images/tile.png)
+
 Every card takes an optional `title`. The three detail cards name themselves
 by default - a card that opens straight into numbers gives the reader nothing
 to anchor on - and `title: ""` hides the header where the dashboard already
@@ -210,8 +239,10 @@ has a heading above it.
 
 Every signal on the breakdown card carries a **`?` pill**: press it and the
 card explains how that number is arrived at, in place. The copy quotes only
-values the integration publishes - the window, the coverage target - so an
-explanation cannot drift away from the code when a constant is retuned.
+values the integration publishes - the window, the coverage target, the knee of
+each saturating curve - so an explanation cannot drift away from the code when
+a constant is retuned. The knees are published for exactly that reason: a `k`
+that lived only in prose would go quietly wrong the first time it moved.
 Counts sit next to scores there too: 61 automations score 99, and the card
 says both rather than leaving 99 to be misread as a count.
 
@@ -246,20 +277,75 @@ HACS -> three-dot menu -> **Custom repositories** -> add this repository with
 category **Integration**, then install and restart. Add the integration from
 **Settings -> Devices & services -> Add integration -> HAUS**.
 
-## Entity
+## Entities
 
 `sensor.haus_score` - 0-100, with the per-pillar scores, the effective weights,
-the contribution points per pillar, the tier and `haghs_available` as
-attributes. The score is never the only thing on screen.
+the contribution points per pillar, the tier, `haghs_available` and the
+community averages as attributes. The score is never the only thing on screen.
+
+One sensor per owned pillar - `sensor.haus_usage`, `sensor.haus_diversity`,
+`sensor.haus_users` - each carrying its own metrics, the raw counts behind
+them, and the knee of any saturating curve. Hygiene has no sensor of its own:
+it is read from HAGHS and never recomputed here.
+
+## Events
+
+`haus_tier_changed` fires when the score crosses into a different tier, so an
+automation can react without polling the sensor and banding it by hand.
+
+| Field | |
+| --- | --- |
+| `previous_tier` | the tier being left |
+| `tier` | the tier now |
+| `score` | the score that crossed |
+| `direction` | `up` or `down` |
+
+It deliberately stays quiet in two cases. It does not fire on the first reading,
+because a tier has not changed just because HAUS started watching it. And it
+does not fire for readings taken before Home Assistant has finished starting,
+because entry setup runs before `automation`, `script` and `scene` have loaded
+and that collection sees an empty house - without the guard it would announce a
+drop to Starter and a climb back on every restart.
+
+The consequence, stated plainly: a tier change that happened while Home
+Assistant was down is not reported. HAUS did not observe it.
+
+```yaml
+automation:
+  - alias: "Say something when HAUS levels up"
+    triggers:
+      - trigger: event
+        event_type: haus_tier_changed
+        event_data:
+          direction: up
+    actions:
+      - action: notify.persistent_notification
+        data:
+          message: "HAUS reached {{ trigger.event.data.tier }} at {{ trigger.event.data.score }}."
+```
 
 ## Development
 
 ```sh
 uv sync
-uv run pytest
+uv run pytest          # the integration
 uv run ruff check .
 uv run mypy
+
+npm ci
+npm test               # the cards, in happy-dom
+npm run typecheck
+npm run build          # rollup -> the committed www/ artifact
+npm run test:e2e       # card layout, in a real browser
+npm run capture        # regenerate the README screenshots
 ```
+
+`npm run test:e2e` needs a browser once: `npx playwright install chromium`.
+
+CI fails if the committed `www/` artifact does not match a fresh build, so the
+file users install is always the file the source produces. The README
+screenshots come from that same artifact through the layout-test harness, so
+regenerating them is one command rather than a round of manual cropping.
 
 ## License
 

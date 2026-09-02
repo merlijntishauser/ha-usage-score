@@ -8,7 +8,8 @@
     "build": "rollup -c && node scripts/copy-artifact.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "capture": "node scripts/capture-cards.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
