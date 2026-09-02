@@ -135,7 +135,7 @@ export class HausCard extends HausCardBase {
           </div>
         </div>
         <div class="footer">
-          ${this._sparkline(attributes.score_history ?? [])}
+          ${this._sparkline(attributes.score_history ?? [], degraded)}
           <div class="next-action">${nextAction(pillars, weights)}</div>
           ${degraded
             ? html`<div class="cta">
@@ -175,11 +175,24 @@ export class HausCard extends HausCardBase {
     `;
   }
 
-  private _sparkline(history: readonly HausHistoryPoint[]): TemplateResult {
+  /**
+   * The weekly sparkline, or a line explaining why there is not one yet.
+   *
+   * `nagging` says the footer already carries a nag. One is the maximum, so
+   * the placeholder gives way to it: a caption for an absent sparkline is the
+   * least useful line the card can spend on a reader who is already being
+   * told something more important.
+   */
+  private _sparkline(
+    history: readonly HausHistoryPoint[],
+    nagging: boolean,
+  ): TemplateResult | typeof nothing {
     if (history.length < 2) {
-      return html`<div class="sparkline empty">
-        Building history: one point a week.
-      </div>`;
+      return nagging
+        ? nothing
+        : html`<div class="sparkline empty">
+            Building history: one point a week.
+          </div>`;
     }
     const scores = history.map((point) => point.score);
     const lowest = Math.min(...scores);

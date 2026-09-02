@@ -221,10 +221,39 @@ describe("degraded state", () => {
     expect(card.shadowRoot?.querySelectorAll(".cta")).toHaveLength(1);
   });
 
+  it("drops the history placeholder rather than stacking a second nag", async () => {
+    const card = await renderCard(makeHass(DEGRADED_ATTRIBUTES, "66"));
+
+    expect(card.shadowRoot?.querySelector(".cta")).toBeTruthy();
+    expect(card.shadowRoot?.querySelector(".sparkline.empty")).toBeNull();
+    expect(text(card)).not.toContain("Building history");
+  });
+
+  it("still keeps the next action, which is guidance rather than a nag", async () => {
+    const card = await renderCard(makeHass(DEGRADED_ATTRIBUTES, "66"));
+
+    expect(card.shadowRoot?.querySelectorAll(".next-action")).toHaveLength(1);
+  });
+
   it("matches its snapshot", async () => {
     const card = await renderCard(makeHass(DEGRADED_ATTRIBUTES, "66"));
 
     expect(markup(card)).toMatchSnapshot();
+  });
+});
+
+describe("fresh install with hygiene present", () => {
+  const NO_HISTORY: HausScoreAttributes = {
+    ...FULL_ATTRIBUTES,
+    score_history: [{ week: "2026-W32", score: 71 }],
+  };
+
+  it("explains the empty sparkline, because nothing else is nagging", async () => {
+    const card = await renderCard(makeHass(NO_HISTORY));
+
+    expect(card.shadowRoot?.querySelector(".sparkline.empty")).toBeTruthy();
+    expect(text(card)).toContain("Building history");
+    expect(card.shadowRoot?.querySelector(".cta")).toBeNull();
   });
 });
 
