@@ -650,3 +650,10 @@ def test_users_details_expose_no_per_user_information() -> None:
     details = users_details(UsersSignals(active_accounts=4))
 
     assert all(isinstance(value, int) for value in details.values())
+
+
+def test_diversity_details_name_the_coverage_target() -> None:
+    """A card showing "17 of 27" cannot explain a score built on a target."""
+    details = diversity_details(DiversitySignals(group_counts={"lighting": 1}))
+
+    assert details["target_groups"] == TARGET_GROUPS

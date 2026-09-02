@@ -311,6 +311,9 @@ def diversity_details(signals: DiversitySignals) -> dict[str, Any]:
         # Sizes as well as names: the spread card draws these as a stacked bar,
         # and unclassified integrations are not a kind of thing to draw.
         "group_counts": dict(sorted(counted.items())),
+        # The score divides coverage by this, not by the number of groups
+        # that exist, so a card showing "17 of 27" needs it to explain 90.
+        "target_groups": TARGET_GROUPS,
     }
 
 
