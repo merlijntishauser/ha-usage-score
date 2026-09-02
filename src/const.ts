@@ -35,6 +35,7 @@ export const RING_STROKE_WIDTH = 13;
 export const RING_GAP = 2;
 
 export const CARD_TYPE = "haus-card";
+export const BREAKDOWN_CARD_TYPE = "haus-breakdown-card";
 
 export const STUB_CONFIG: HausCardConfig = {
   type: `custom:${CARD_TYPE}`,

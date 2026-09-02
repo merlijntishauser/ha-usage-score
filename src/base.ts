@@ -28,6 +28,7 @@ export abstract class HausCardBase extends LitElement {
   private _entityId: string = DEFAULT_ENTITY;
   private _hass: HomeAssistant | undefined;
   private _entityState: HassEntity | undefined;
+  private _watched: (HassEntity | undefined)[] | undefined;
 
   /** The element name used in error messages. */
   protected abstract readonly cardName: string;
@@ -50,6 +51,7 @@ export abstract class HausCardBase extends LitElement {
       }
     }
     this._entityId = (entity as string | undefined) ?? DEFAULT_ENTITY;
+    this._watched = undefined;
     this.requestUpdate();
   }
 
@@ -66,13 +68,26 @@ export abstract class HausCardBase extends LitElement {
    * slow.
    */
   set hass(hass: HomeAssistant) {
-    const next = hass.states[this._entityId];
+    const next = this.watchedEntityIds().map((id) => hass.states[id]);
     this._hass = hass;
-    if (next === this._entityState) {
+    if (
+      this._watched !== undefined &&
+      next.length === this._watched.length &&
+      next.every((state, index) => state === this._watched?.[index])
+    ) {
       return;
     }
-    this._entityState = next;
+    this._watched = next;
+    this._entityState = next[0];
     this.requestUpdate();
+  }
+
+  /**
+   * Entity ids this card re-renders for. The score entity comes first; cards
+   * that read the pillar sensors too widen this.
+   */
+  protected watchedEntityIds(): string[] {
+    return [this._entityId];
   }
 
   get hass(): HomeAssistant | undefined {
@@ -96,4 +111,17 @@ export abstract class HausCardBase extends LitElement {
       ? EMPTY_ATTRIBUTES
       : (raw as unknown as HausScoreAttributes);
   }
+}
+
+/**
+ * Derive a pillar sensor's entity id from the score sensor's.
+ *
+ * `sensor.haus_score` -> `sensor.haus_usage`. Users rename things, so this
+ * follows whatever the score entity was configured as rather than assuming the
+ * default prefix.
+ */
+export function pillarEntityId(scoreEntityId: string, pillar: string): string {
+  return scoreEntityId.endsWith("_score")
+    ? `${scoreEntityId.slice(0, -"_score".length)}_${pillar}`
+    : `sensor.haus_${pillar}`;
 }
