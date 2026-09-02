@@ -528,3 +528,11 @@ COMMUNITY_REPORTING_INSTALLS = 526665
 # entirely; the diversity pillar counts distinct config-entry domains and does
 # include custom integrations. The two numbers do not measure the same thing,
 # and comparing them would flatter or punish an instance for no reason.
+
+
+# --- Tier transitions -----------------------------------------------------
+#
+# Fired when the score crosses into a different tier, so an automation can
+# react to "you levelled up" without polling the sensor and doing the banding
+# itself. Carries previous_tier, tier, score and direction.
+EVENT_TIER_CHANGED = "haus_tier_changed"
