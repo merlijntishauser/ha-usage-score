@@ -33,8 +33,8 @@ Under construction, built in vertical slices.
 | M3 - users pillar, aggregate only | done |
 | M4 - hygiene pillar consumed from HAGHS | done |
 | M5 - the bundled `haus-card`, hero and degraded states | done |
-| M6 - breakdown, detail cards, badge and tile | next |
-| M7 - community percentile, opt-in and off by default | |
+| M6 - breakdown, detail cards, badge and tile | done |
+| M7 - community percentile, opt-in and off by default | next |
 | M8 - docs, HACS default submission, brands PR | |
 
 All four pillars are live, and the card draws them.
@@ -166,6 +166,33 @@ The footer's sparkline is twelve weekly snapshots that HAUS keeps itself, for
 the same reason it tallies notifications itself: the recorder may be absent, may
 exclude these entities, and must not be queried on the event loop. A fresh
 install says so rather than drawing a flat line.
+
+### The other cards
+
+One resource, six cards. All of them read the same score entity and follow the
+same palette, so a dashboard using several still reads as one system.
+
+| Card | What it is for |
+| --- | --- |
+| `custom:haus-card` | The hero: segmented ring, pillar rows, sparkline, next action |
+| `custom:haus-breakdown-card` | The printed arithmetic and every raw signal under it |
+| `custom:haus-spread-card` | Integration spread: coverage, evenness, stacked bar, missing groups |
+| `custom:haus-household-card` | Who can operate the house, and whether they do |
+| `custom:haus-badge` | 26px ring plus the score |
+| `custom:haus-tile` | Score, tier and a 5px contribution strip |
+
+The breakdown card exists to answer one objection directly: that the score is a
+magic number. It prints `71 = floor(.30*84 + .30*70 + .25*61 + .15*66)` using
+the weights actually in force, so the number can always be taken apart.
+
+The household card is the only one that fetches anything. It calls the
+admin-checked `haus/user_activity` websocket command for the per-account
+breakdown, and renders a refusal as a refusal - "off by default" and
+"administrator only" are different states, and neither is an empty list.
+
+The badge and the tile keep the same four-colour composition as the hero ring.
+That consistency is the reason the ring is segmented rather than drawn as a
+single arc.
 
 ### Building the card
 

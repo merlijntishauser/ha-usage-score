@@ -23,6 +23,12 @@ import {
 // Importing the editor here guarantees it is registered by the time
 // getConfigElement asks for it: one bundle, one resource, one install.
 import "./haus-card-editor";
+import "./haus-breakdown-card";
+import "./haus-compact";
+import "./haus-household-card";
+import "./haus-spread-card";
+// Picker entries for every card live in one place.
+import "./register";
 import { nextAction } from "./insights";
 import { ringGeometry } from "./ring";
 import type { HausCardConfig, HausHistoryPoint } from "./types";
@@ -344,21 +350,3 @@ export class HausCard extends HausCardBase {
 if (!customElements.get(CARD_TYPE)) {
   customElements.define(CARD_TYPE, HausCard);
 }
-
-interface CustomCardEntry {
-  type: string;
-  name: string;
-  description: string;
-  preview: boolean;
-}
-
-const cardRegistry = window as unknown as { customCards?: CustomCardEntry[] };
-cardRegistry.customCards = [
-  ...(cardRegistry.customCards ?? []),
-  {
-    type: CARD_TYPE,
-    name: "HAUS",
-    description: "How much of Home Assistant this instance actually uses.",
-    preview: true,
-  },
-];
