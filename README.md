@@ -117,8 +117,8 @@ legible. Nothing leaves the instance either way.
 
 HAUS does not recompute hygiene. No zombie-entity counting, no database size,
 no backup checks - that is [HAGHS](https://github.com/D-N91/home-assistant-global-health-score)'s
-job and it is settled. HAUS reads `sensor.haghs_global_score` and weights it at
-30%.
+job and it is settled. HAUS reads `sensor.system_ha_global_health_score` - the
+entity a stock HAGHS install creates - and weights it at 30%.
 
 Detection is by **loaded config entry** for the `haghs` domain, re-evaluated on
 every refresh and immediately when a config entry for that domain is added or
@@ -128,7 +128,11 @@ HAUS's configuration. There is deliberately no `dependencies` or
 absent, and it does.
 
 Missing, `unknown`, `unavailable`, non-numeric, or pointed at the wrong entity
-all mean **absent**, never zero. A dependency that briefly restarts must not
+all mean **absent**, never zero. That is deliberate, and it has a cost worth
+knowing: because a wrong entity id looks exactly like an uninstalled HAGHS,
+releases up to 0.4.1 shipped a default that matched nothing and the pillar
+quietly never engaged. If hygiene reads `unavailable` while HAGHS is installed,
+check the entity id option before anything else. A dependency that briefly restarts must not
 tank the score, so the pillar is dropped and the other three renormalise over
 their own weight sum. The entity id is an option, because users rename things.
 

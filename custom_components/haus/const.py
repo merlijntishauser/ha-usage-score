@@ -469,7 +469,14 @@ WS_TYPE_USER_ACTIVITY = "haus/user_activity"
 # deliberately no manifest dependency: HAUS must set up cleanly without it.
 HAGHS_DOMAIN = "haghs"
 CONF_HAGHS_ENTITY_ID = "haghs_entity_id"
-DEFAULT_HAGHS_ENTITY_ID = "sensor.haghs_global_score"
+# HAGHS sets `_attr_name` to its own DEFAULT_NAME, "System: HA - Global
+# Health Score", with no `has_entity_name`, so Home Assistant slugifies that
+# into the entity id. Every release up to 0.4.1 defaulted to
+# `sensor.haghs_global_score`, which HAGHS has never created - so the hygiene
+# pillar silently never engaged on a stock install. A default pointing at a
+# missing entity is indistinguishable from HAGHS being absent, which is
+# absent-is-never-zero working correctly and hiding the bug in the process.
+DEFAULT_HAGHS_ENTITY_ID = "sensor.system_ha_global_health_score"
 
 # Weeks of score history kept for the card's sparkline. HAUS keeps its own
 # weekly snapshots rather than querying the recorder, for the same reason it

@@ -13,6 +13,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.util import slugify
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.haus.collectors import collect_hygiene
@@ -197,3 +198,23 @@ async def test_a_renamed_haghs_entity_is_honoured_end_to_end(
 
     assert attributes["haghs_available"] is True
     assert attributes["pillars"]["hygiene"] == 66.0
+
+
+def test_the_default_entity_id_matches_a_stock_haghs_install() -> None:
+    """The default has to be the entity id HAGHS actually creates.
+
+    HAGHS has no `has_entity_name`; it sets `_attr_name` to its own
+    DEFAULT_NAME, "System: HA - Global Health Score", and Home Assistant
+    slugifies that into the entity id. Deriving it here rather than pasting
+    the answer means the reasoning survives.
+
+    This was wrong for every release up to 0.4.1 - the default read
+    `sensor.haghs_global_score`, which HAGHS has never created. Nothing
+    failed: a default pointing at a missing entity is indistinguishable from
+    HAGHS not being installed, so the pillar was dropped and the remaining
+    three renormalised, exactly as designed. Absent-is-never-zero made the
+    bug invisible rather than loud.
+    """
+    haghs_default_name = "System: HA - Global Health Score"
+
+    assert f"sensor.{slugify(haghs_default_name)}" == DEFAULT_HAGHS_ENTITY_ID
