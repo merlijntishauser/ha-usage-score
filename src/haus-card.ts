@@ -238,6 +238,13 @@ export class HausCard extends HausCardBase {
       align-items: center;
       padding: 16px;
       flex-wrap: wrap;
+      /*
+       * Only bites once the hero has wrapped. Above the wrap point .pillars
+       * grows into all the free space, so there is none left to distribute;
+       * below it the ring is alone on its row and would otherwise sit hard
+       * left against a column-wide void.
+       */
+      justify-content: center;
     }
     .ring-wrap {
       position: relative;

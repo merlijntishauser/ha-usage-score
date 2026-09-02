@@ -257,6 +257,32 @@ describe("fresh install with hygiene present", () => {
   });
 });
 
+describe("narrow columns", () => {
+  /**
+   * A declaration guard, not a layout test.
+   *
+   * happy-dom has no layout engine, so nothing here can prove flexbox
+   * actually centres anything - the wrapped layout was measured in a real
+   * browser instead. What this pins is that the two declarations the wrapped
+   * layout depends on stay put, because deleting either one is silent.
+   */
+  function heroStyles(): string {
+    const ctor = customElements.get("haus-card") as unknown as {
+      styles: { cssText: string }[];
+    };
+    const css = ctor.styles.map((sheet) => sheet.cssText).join("");
+    return /\.hero\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+  }
+
+  it("lets the hero wrap rather than overflow a narrow column", () => {
+    expect(heroStyles()).toContain("flex-wrap: wrap");
+  });
+
+  it("centres the ring once the hero has wrapped", () => {
+    expect(heroStyles()).toContain("justify-content: center");
+  });
+});
+
 describe("missing entity", () => {
   it("explains itself rather than throwing", async () => {
     const card = await renderCard({ states: {} });
