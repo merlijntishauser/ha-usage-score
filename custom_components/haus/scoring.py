@@ -31,6 +31,7 @@ from .const import (
     SCORE_TIERS,
     TARGET_GROUPS,
     USAGE_METRIC_WEIGHTS,
+    USAGE_WINDOW_DAYS,
     USERS_METRIC_WEIGHTS,
 )
 
@@ -123,6 +124,26 @@ def _advanced_score(signals: UsageSignals) -> float:
     """
     present = signals.advanced_features & ADVANCED_FEATURES
     return 100.0 * len(present) / len(ADVANCED_FEATURES)
+
+
+def usage_details(signals: UsageSignals) -> dict[str, int]:
+    """Return the raw usage counts, and the window they are judged over.
+
+    The metrics are curves - sixty-one automations saturate to 99 - so a card
+    printing "Automations 99" is lying the same way "86 accounts" was. The
+    counts travel alongside, and `window_days` lets the card explain the
+    calculation without hard-coding a tunable into its copy.
+    """
+    return {
+        "automations_defined": signals.automations_defined,
+        "automations_fired": signals.automations_fired,
+        "scripts_and_scenes_defined": signals.scripts_defined + signals.scenes_defined,
+        "scripts_and_scenes_used": signals.scripts_run + signals.scenes_activated,
+        "helper_count": signals.helper_count,
+        "notification_count": signals.notification_count,
+        "notification_history_days": signals.notification_history_days,
+        "window_days": USAGE_WINDOW_DAYS,
+    }
 
 
 def usage_metrics(signals: UsageSignals) -> dict[str, float]:

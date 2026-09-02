@@ -31,6 +31,7 @@ from .scoring import (
     score_diversity,
     score_usage,
     score_users,
+    usage_details,
     usage_metrics,
     users_details,
     users_metrics,
@@ -102,6 +103,7 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
                 "users": users_metrics(users_signals),
             },
             details={
+                "usage": usage_details(usage_signals),
                 "diversity": diversity_details(diversity_signals),
                 "users": users_details(users_signals),
             },

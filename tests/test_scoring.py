@@ -14,6 +14,7 @@ from custom_components.haus.const import (
     OTHER_GROUP,
     TARGET_GROUPS,
     USAGE_METRIC_WEIGHTS,
+    USAGE_WINDOW_DAYS,
     USERS_METRIC_WEIGHTS,
 )
 from custom_components.haus.scoring import (
@@ -37,6 +38,7 @@ from custom_components.haus.scoring import (
     score_usage,
     score_users,
     tier_for_score,
+    usage_details,
     usage_metrics,
     users_details,
     users_metrics,
@@ -657,3 +659,29 @@ def test_diversity_details_name_the_coverage_target() -> None:
     details = diversity_details(DiversitySignals(group_counts={"lighting": 1}))
 
     assert details["target_groups"] == TARGET_GROUPS
+
+
+def test_usage_details_carry_the_counts_and_the_window() -> None:
+    """The breakdown card shows counts and explains the window it judges."""
+    signals = UsageSignals(
+        automations_defined=61,
+        automations_fired=34,
+        scripts_defined=12,
+        scripts_run=4,
+        scenes_defined=166,
+        scenes_activated=9,
+        helper_count=40,
+        notification_count=88,
+        notification_history_days=3,
+    )
+
+    details = usage_details(signals)
+
+    assert details["automations_defined"] == 61
+    assert details["automations_fired"] == 34
+    assert details["scripts_and_scenes_defined"] == 178
+    assert details["scripts_and_scenes_used"] == 13
+    assert details["helper_count"] == 40
+    assert details["notification_count"] == 88
+    assert details["notification_history_days"] == 3
+    assert details["window_days"] == USAGE_WINDOW_DAYS
