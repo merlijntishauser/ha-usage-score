@@ -84,7 +84,7 @@ breadth.
 
 The score is half **evenness** - the normalised Shannon entropy `H / ln(k)` over
 the groups present, so one dominant group scores badly - and half **coverage**,
-the share of a sixteen-group target that has anything in it. A single group has
+the share of a twenty-group target that has anything in it. A single group has
 nothing to spread across, so its evenness is zero rather than a division by
 zero.
 
