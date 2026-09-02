@@ -36,6 +36,8 @@ export const RING_GAP = 2;
 
 export const CARD_TYPE = "haus-card";
 export const BREAKDOWN_CARD_TYPE = "haus-breakdown-card";
+export const SPREAD_CARD_TYPE = "haus-spread-card";
+export const HOUSEHOLD_CARD_TYPE = "haus-household-card";
 
 export const STUB_CONFIG: HausCardConfig = {
   type: `custom:${CARD_TYPE}`,
