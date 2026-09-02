@@ -40,3 +40,29 @@ export function nextAction(
 
   return `Best next gain: ${PILLAR_LABELS[bestKey]}, worth ${bestUnearned.toFixed(0)} points.`;
 }
+
+/**
+ * Print the arithmetic that produced the score.
+ *
+ * This exists to answer the "magic score" objection: a number nobody can take
+ * apart is a number nobody should trust. The line reconciles exactly with what
+ * the integration computed, renormalised weights and all.
+ */
+export function scoreArithmetic(
+  score: number,
+  pillars: HausPillars,
+  weights: Readonly<Record<string, number>>,
+): string {
+  const terms: string[] = [];
+  for (const key of PILLARS) {
+    const value = pillars[key];
+    const weight = weights[key];
+    if (value === null || value === undefined || weight === undefined) {
+      continue;
+    }
+    // Leading zero stripped: ".30" reads as a weight, "0.30" as a measurement.
+    const printedWeight = weight.toFixed(2).replace(/^0/, "");
+    terms.push(`${printedWeight}·${Math.round(value)}`);
+  }
+  return `${score} = ⌊${terms.join(" + ")}⌋`;
+}
