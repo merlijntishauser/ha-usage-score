@@ -25,6 +25,7 @@ from custom_components.haus.scoring import (
     build_result,
     compute_score,
     covered_groups,
+    diversity_details,
     effective_weights,
     evenness,
     group_counts,
@@ -600,3 +601,21 @@ def test_activity_counts_for_real_once_the_history_is_long_enough() -> None:
 
     assert users_metrics(busy)["activity_30d"] == 100.0
     assert users_metrics(silent)["activity_30d"] == 0.0
+
+
+def test_diversity_details_carry_the_count_per_covered_group() -> None:
+    """The spread card draws a stacked bar; it needs the sizes, not just names."""
+    signals = DiversitySignals(
+        group_counts={"lighting": 8, "climate": 2, OTHER_GROUP: 5}
+    )
+
+    details = diversity_details(signals)
+
+    assert details["group_counts"] == {"lighting": 8, "climate": 2}
+
+
+def test_diversity_details_leave_out_unclassified_integrations() -> None:
+    """`other` is not a kind of thing, so it is not a bar segment either."""
+    details = diversity_details(DiversitySignals(group_counts={OTHER_GROUP: 9}))
+
+    assert details["group_counts"] == {}

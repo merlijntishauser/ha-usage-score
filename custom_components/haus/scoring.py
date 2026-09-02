@@ -291,6 +291,9 @@ def diversity_details(signals: DiversitySignals) -> dict[str, Any]:
         "groups_covered": sorted(covered),
         "groups_missing": sorted(missing_groups(signals)),
         "evenness": round(evenness(counted), 3),
+        # Sizes as well as names: the spread card draws these as a stacked bar,
+        # and unclassified integrations are not a kind of thing to draw.
+        "group_counts": dict(sorted(counted.items())),
     }
 
 
