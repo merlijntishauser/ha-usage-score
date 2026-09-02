@@ -63,3 +63,19 @@ jobs:
             echo "::error::custom_components/haus/www/haus-card.js is stale. Run 'npm run build' and commit the result."
             exit 1
           fi
+
+  layout:
+    name: card layout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # The specs load the built bundle, not the sources: what ships to a
+      # dashboard is the thing whose layout matters.
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

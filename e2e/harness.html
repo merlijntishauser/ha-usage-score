@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>HAUS layout harness</title>
+<style>
+  :root {
+    --primary-text-color: #212121;
+    --secondary-text-color: #727272;
+    --divider-color: #e0e0e0;
+    --card-background-color: #fff;
+    --ha-card-border-radius: 12px;
+  }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #f5f5f5;
+    font-family: Roboto, system-ui, sans-serif;
+  }
+  /* The column is what a dashboard gives a card, and the thing under test. */
+  #column {
+    box-sizing: border-box;
+  }
+</style>
+<div id="column"></div>
+<script type="module" src="./harness.mjs"></script>

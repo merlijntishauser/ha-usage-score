@@ -9,3 +9,7 @@ htmlcov/
 node_modules/
 dist/
 screenshots/
+
+# Playwright
+/test-results/
+/playwright-report/
