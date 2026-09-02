@@ -9,7 +9,7 @@
 import { css, html, nothing } from "lit";
 import type { TemplateResult } from "lit";
 
-import { HausCardBase, pillarEntityId } from "./base";
+import { HausCardBase, headerStyles, pillarEntityId } from "./base";
 import { BREAKDOWN_CARD_TYPE, PILLARS, PILLAR_COLORS, PILLAR_LABELS } from "./const";
 import { scoreArithmetic } from "./insights";
 import type { HausCardConfig, HomeAssistant } from "./types";
@@ -29,6 +29,7 @@ const METRIC_LABELS: Readonly<Record<string, string>> = {
 };
 
 export class HausBreakdownCard extends HausCardBase {
+  protected override readonly defaultTitle = "Score breakdown";
   protected readonly cardName = BREAKDOWN_CARD_TYPE;
 
   protected override watchedEntityIds(): string[] {
@@ -71,6 +72,7 @@ export class HausBreakdownCard extends HausCardBase {
 
     return html`
       <ha-card>
+        ${this.renderHeader()}
         <div class="pad">
           <div class="arithmetic">
             ${scoreArithmetic(
@@ -172,7 +174,9 @@ export class HausBreakdownCard extends HausCardBase {
     `;
   }
 
-  static override styles = css`
+  static override styles = [
+    headerStyles,
+    css`
     :host {
       display: block;
     }
@@ -240,7 +244,8 @@ export class HausBreakdownCard extends HausCardBase {
     .muted {
       font-style: italic;
     }
-  `;
+  `,
+  ];
 }
 
 if (!customElements.get(BREAKDOWN_CARD_TYPE)) {

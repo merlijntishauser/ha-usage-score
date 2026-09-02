@@ -10,7 +10,7 @@
 import { css, html, nothing } from "lit";
 import type { TemplateResult } from "lit";
 
-import { HausCardBase, pillarEntityId } from "./base";
+import { HausCardBase, headerStyles, pillarEntityId } from "./base";
 import { HOUSEHOLD_CARD_TYPE, PILLAR_COLORS } from "./const";
 import type { HausCardConfig, HausUserActivity, HomeAssistant } from "./types";
 
@@ -54,6 +54,7 @@ type DetailState =
   | { kind: "error"; message: string };
 
 export class HausHouseholdCard extends HausCardBase {
+  protected override readonly defaultTitle = "Household";
   protected readonly cardName = HOUSEHOLD_CARD_TYPE;
 
   private _detail: DetailState = { kind: "idle" };
@@ -140,6 +141,7 @@ export class HausHouseholdCard extends HausCardBase {
 
     return html`
       <ha-card>
+        ${this.renderHeader()}
         <div class="pad">
           <div class="metrics">
             ${METRICS.map((metric) => {
@@ -217,7 +219,9 @@ export class HausHouseholdCard extends HausCardBase {
     }
   }
 
-  static override styles = css`
+  static override styles = [
+    headerStyles,
+    css`
     :host {
       display: block;
     }
@@ -288,7 +292,8 @@ export class HausHouseholdCard extends HausCardBase {
       margin-top: 4px;
       padding-top: 4px;
     }
-  `;
+  `,
+  ];
 }
 
 if (!customElements.get(HOUSEHOLD_CARD_TYPE)) {

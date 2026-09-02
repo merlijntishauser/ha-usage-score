@@ -6,7 +6,8 @@
  * in one place is what stops five cards drifting apart.
  */
 
-import { LitElement } from "lit";
+import { LitElement, css, html, nothing } from "lit";
+import type { TemplateResult } from "lit";
 
 import { DEFAULT_ENTITY } from "./const";
 import type {
@@ -33,6 +34,11 @@ export abstract class HausCardBase extends LitElement {
   /** The element name used in error messages. */
   protected abstract readonly cardName: string;
 
+  /** Header shown when the config does not set one. Empty means none. */
+  protected readonly defaultTitle: string = "";
+
+  private _title: string | undefined;
+
   /** Validate and store the card configuration. */
   setConfig(config: HausCardConfig): void {
     const entity: unknown = config?.entity;
@@ -50,6 +56,7 @@ export abstract class HausCardBase extends LitElement {
         );
       }
     }
+    this._title = typeof config?.title === "string" ? config.title : undefined;
     this._entityId = (entity as string | undefined) ?? DEFAULT_ENTITY;
     this._watched = undefined;
     this.requestUpdate();
@@ -94,6 +101,18 @@ export abstract class HausCardBase extends LitElement {
     return this._hass;
   }
 
+  /**
+   * Render the card header.
+   *
+   * A detail card that opens straight into numbers gives the reader nothing to
+   * anchor on, so each one names itself. An explicit empty title hides it, for
+   * dashboards that already have a heading above the card.
+   */
+  protected renderHeader(): TemplateResult | typeof nothing {
+    const title = this._title ?? this.defaultTitle;
+    return title === "" ? nothing : html`<h2 class="card-header">${title}</h2>`;
+  }
+
   /** The score entity's state object, or undefined when it is missing. */
   protected get entityState(): HassEntity | undefined {
     return this._entityState;
@@ -125,3 +144,19 @@ export function pillarEntityId(scoreEntityId: string, pillar: string): string {
     ? `${scoreEntityId.slice(0, -"_score".length)}_${pillar}`
     : `sensor.haus_${pillar}`;
 }
+
+/** Header styling shared by every card that shows one. */
+export const headerStyles = css`
+  .card-header {
+    margin: 0;
+    padding: 16px 16px 0;
+    font-family: var(--ha-card-header-font-family, inherit);
+    font-size: var(--ha-card-header-font-size, 20px);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--ha-card-header-color, var(--primary-text-color));
+  }
+  .card-header + .pad {
+    padding-top: 12px;
+  }
+`;

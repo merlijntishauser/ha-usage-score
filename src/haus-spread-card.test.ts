@@ -169,3 +169,39 @@ describe("reading the stacked bar", () => {
     expect(text(card)).toContain("20");
   });
 });
+
+describe("card title", () => {
+  it("names itself so the card is not a wall of numbers", async () => {
+    const card = await render(makeHass(FULL));
+
+    expect(card.shadowRoot?.querySelector(".card-header")?.textContent).toContain(
+      "Integration spread",
+    );
+  });
+
+  it("lets the dashboard override the title", async () => {
+    const card = document.createElement(
+      "haus-spread-card",
+    ) as unknown as HausSpreadCard;
+    card.setConfig({ type: "custom:haus-spread-card", title: "Breadth" });
+    card.hass = makeHass(FULL);
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector(".card-header")?.textContent).toContain(
+      "Breadth",
+    );
+  });
+
+  it("hides the header when the title is set to empty", async () => {
+    const card = document.createElement(
+      "haus-spread-card",
+    ) as unknown as HausSpreadCard;
+    card.setConfig({ type: "custom:haus-spread-card", title: "" });
+    card.hass = makeHass(FULL);
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector(".card-header")).toBeNull();
+  });
+});

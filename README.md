@@ -181,6 +181,11 @@ same palette, so a dashboard using several still reads as one system.
 | `custom:haus-badge` | 26px ring plus the score |
 | `custom:haus-tile` | Score, tier and a 5px contribution strip |
 
+Every card takes an optional `title`. The three detail cards name themselves
+by default - a card that opens straight into numbers gives the reader nothing
+to anchor on - and `title: ""` hides the header where the dashboard already
+has a heading above it.
+
 The breakdown card exists to answer one objection directly: that the score is a
 magic number. It prints `71 = floor(.30*84 + .30*70 + .25*61 + .15*66)` using
 the weights actually in force, so the number can always be taken apart.

@@ -9,7 +9,7 @@
 import { css, html, nothing } from "lit";
 import type { TemplateResult } from "lit";
 
-import { HausCardBase, pillarEntityId } from "./base";
+import { HausCardBase, headerStyles, pillarEntityId } from "./base";
 import { PILLAR_COLORS, SPREAD_CARD_TYPE } from "./const";
 import type { HausCardConfig, HomeAssistant } from "./types";
 
@@ -17,6 +17,7 @@ import type { HausCardConfig, HomeAssistant } from "./types";
 const MAX_SEGMENTS = 10;
 
 export class HausSpreadCard extends HausCardBase {
+  protected override readonly defaultTitle = "Integration spread";
   protected readonly cardName = SPREAD_CARD_TYPE;
 
   protected override watchedEntityIds(): string[] {
@@ -60,6 +61,7 @@ export class HausSpreadCard extends HausCardBase {
 
     return html`
       <ha-card>
+        ${this.renderHeader()}
         <div class="pad">
           <div class="figures">
             <div class="figure">
@@ -150,7 +152,9 @@ export class HausSpreadCard extends HausCardBase {
     `;
   }
 
-  static override styles = css`
+  static override styles = [
+    headerStyles,
+    css`
     :host {
       display: block;
     }
@@ -228,7 +232,8 @@ export class HausSpreadCard extends HausCardBase {
       border: 1px dashed var(--divider-color);
       color: var(--secondary-text-color);
     }
-  `;
+  `,
+  ];
 }
 
 if (!customElements.get(SPREAD_CARD_TYPE)) {

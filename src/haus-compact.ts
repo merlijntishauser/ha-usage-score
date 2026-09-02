@@ -9,7 +9,7 @@
 import { css, html, svg } from "lit";
 import type { TemplateResult } from "lit";
 
-import { HausCardBase } from "./base";
+import { HausCardBase, headerStyles } from "./base";
 import {
   BADGE_GAP,
   BADGE_SIZE,
@@ -194,7 +194,9 @@ export class HausTile extends HausCardBase {
     `;
   }
 
-  static override styles = css`
+  static override styles = [
+    headerStyles,
+    css`
     :host {
       display: block;
     }
@@ -235,7 +237,8 @@ export class HausTile extends HausCardBase {
       display: block;
       height: 100%;
     }
-  `;
+  `,
+  ];
 }
 
 if (!customElements.get(BADGE_TYPE)) {

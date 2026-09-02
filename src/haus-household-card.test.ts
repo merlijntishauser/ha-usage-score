@@ -162,3 +162,13 @@ describe("counts versus scores", () => {
     expect(text(card)).not.toMatch(/days/);
   });
 });
+
+describe("card title", () => {
+  it("names itself", async () => {
+    const card = await render(makeHass());
+
+    expect(card.shadowRoot?.querySelector(".card-header")?.textContent).toContain(
+      "Household",
+    );
+  });
+});

@@ -48,4 +48,6 @@ export interface HausCardConfig {
   /** The HAUS score entity. Defaults to `sensor.haus_score`. */
   readonly entity?: string;
   readonly name?: string;
+  /** Card header. Omit for the card's own default; set empty to hide it. */
+  readonly title?: string;
 }

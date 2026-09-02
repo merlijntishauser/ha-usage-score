@@ -159,3 +159,13 @@ describe("reading the numbers", () => {
     expect(text(card)).toMatch(/scored 0-100/i);
   });
 });
+
+describe("card title", () => {
+  it("names itself", async () => {
+    const card = await render(makeHass());
+
+    expect(card.shadowRoot?.querySelector(".card-header")?.textContent).toContain(
+      "Score breakdown",
+    );
+  });
+});

@@ -245,3 +245,23 @@ describe("card structure", () => {
     expect(card.shadowRoot?.querySelector("ha-card .hero")).toBeTruthy();
   });
 });
+
+describe("optional header", () => {
+  it("shows no header by default: the ring speaks for itself", async () => {
+    const card = await renderCard(makeHass(FULL_ATTRIBUTES));
+
+    expect(card.shadowRoot?.querySelector(".card-header")).toBeNull();
+  });
+
+  it("shows a title when the dashboard asks for one", async () => {
+    const card = document.createElement("haus-card") as unknown as HausCard;
+    card.setConfig({ type: "custom:haus-card", title: "House score" } as never);
+    card.hass = makeHass(FULL_ATTRIBUTES);
+    document.body.appendChild(card);
+    await card.updateComplete;
+
+    expect(card.shadowRoot?.querySelector(".card-header")?.textContent).toContain(
+      "House score",
+    );
+  });
+});

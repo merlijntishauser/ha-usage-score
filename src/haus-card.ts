@@ -9,7 +9,7 @@
 import { css, html, nothing, svg } from "lit";
 import type { TemplateResult } from "lit";
 
-import { HausCardBase } from "./base";
+import { HausCardBase, headerStyles } from "./base";
 import {
   CARD_TYPE,
   PILLARS,
@@ -86,6 +86,7 @@ export class HausCard extends HausCardBase {
 
     return html`
       <ha-card>
+        ${this.renderHeader()}
         <div class="hero">
           <div class="ring-wrap">
             <svg
@@ -206,7 +207,9 @@ export class HausCard extends HausCardBase {
     `;
   }
 
-  static override styles = css`
+  static override styles = [
+    headerStyles,
+    css`
     :host {
       display: block;
     }
@@ -344,7 +347,8 @@ export class HausCard extends HausCardBase {
       color: var(--primary-text-color);
       opacity: 0.85;
     }
-  `;
+  `,
+  ];
 }
 
 if (!customElements.get(CARD_TYPE)) {
