@@ -7,9 +7,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     COMMUNITY_AS_OF,
@@ -17,11 +15,10 @@ from .const import (
     COMMUNITY_AVG_USERS,
     COMMUNITY_REPORTING_INSTALLS,
     COMMUNITY_SOURCE_URL,
-    DOMAIN,
-    INTEGRATION_TITLE,
     SCORE_HISTORY_WEEKS,
 )
 from .coordinator import HausConfigEntry, HausCoordinator
+from .entity import HausEntity
 from .scoring import pillar_values
 
 # Every sensor here reads a value the coordinator has already fetched; there is
@@ -47,7 +44,7 @@ async def async_setup_entry(
     )
 
 
-class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
+class HausScoreSensor(HausEntity, SensorEntity):
     """The headline HAUS score, 0-100.
 
     Three quality-scale rules are deliberately not satisfied here, because
@@ -65,19 +62,13 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
     Not `disabled_by_default`: it is the primary entity.
     """
 
-    _attr_has_entity_name = True
     _attr_translation_key = "score"
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: HausCoordinator, entry: HausConfigEntry) -> None:
         """Initialise the score sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, entry)
         self._attr_unique_id = f"{entry.entry_id}_score"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=INTEGRATION_TITLE,
-            entry_type=DeviceEntryType.SERVICE,
-        )
 
     @property
     def native_value(self) -> int:
@@ -112,7 +103,7 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
         }
 
 
-class HausPillarSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
+class HausPillarSensor(HausEntity, SensorEntity):
     """One owned pillar, published so it can be graphed in its own right.
 
     The same three rules, and the entity_category one is the arguable case:
@@ -129,7 +120,6 @@ class HausPillarSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
     render nothing until the user goes hunting in the entity registry.
     """
 
-    _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
 
@@ -141,15 +131,10 @@ class HausPillarSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
         pillar: str,
     ) -> None:
         """Initialise a pillar sensor."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, entry)
         self._pillar = pillar
         self._attr_translation_key = pillar
         self._attr_unique_id = f"{entry.entry_id}_{pillar}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=INTEGRATION_TITLE,
-            entry_type=DeviceEntryType.SERVICE,
-        )
 
     @property
     def native_value(self) -> float | None:
