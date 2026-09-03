@@ -48,7 +48,22 @@ async def async_setup_entry(
 
 
 class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
-    """The headline HAUS score, 0-100."""
+    """The headline HAUS score, 0-100.
+
+    Three quality-scale rules are deliberately not satisfied here, because
+    satisfying them would be wrong rather than better.
+
+    No `device_class`: none of Home Assistant's 62 exists for a composite
+    score. The nearest by name are `power_factor`, `duration` and
+    `blood_glucose_concentration`, and claiming any of them would make the
+    sensor lie about what it measures for the sake of a filled-in field.
+
+    No `entity_category`: that marks an entity as configuration or as a
+    diagnostic *of a device* - signal strength, uptime, firmware. This is the
+    measurement the integration exists to publish, which is the opposite.
+
+    Not `disabled_by_default`: it is the primary entity.
+    """
 
     _attr_has_entity_name = True
     _attr_name = "Score"
@@ -99,7 +114,21 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
 
 
 class HausPillarSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
-    """One owned pillar, published so it can be graphed in its own right."""
+    """One owned pillar, published so it can be graphed in its own right.
+
+    The same three rules, and the entity_category one is the arguable case:
+    these are secondary to the score, so `DIAGNOSTIC` is tempting. It is still
+    wrong. A diagnostic entity reports on the health of the thing producing the
+    data; a pillar *is* the data, one of four components of the headline
+    number, and the docstring above says why it is published separately at all.
+    Marking them diagnostic would file the breakdown away from the measurement
+    it breaks down.
+
+    Nor are they disabled by default. The rule targets noisy or non-essential
+    entities, and these are neither: the breakdown and spread cards read them,
+    so shipping them disabled would leave a fresh install with cards that
+    render nothing until the user goes hunting in the entity registry.
+    """
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
