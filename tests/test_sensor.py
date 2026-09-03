@@ -310,3 +310,32 @@ async def test_score_sensor_publishes_the_community_averages(
     assert community["reporting_installs"] == COMMUNITY_REPORTING_INSTALLS
     # Not comparable, so deliberately absent rather than quietly wrong.
     assert "integrations" not in community
+
+
+async def test_entity_ids_and_names_are_exactly_these(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Pins what users' dashboards, automations and history already point at.
+
+    Entity ids are derived from the entity name on first registration, so any
+    change to how names are produced - a translation key, a reworded string -
+    risks moving them for new installs while existing ones keep the old id
+    from the registry. That split is worse than either outcome alone.
+
+    If this test fails, the change is a breaking rename and needs saying so
+    out loud, not adjusting to match.
+    """
+    await _setup(hass)
+
+    actual = {
+        entity_id: hass.states.get(entity_id).attributes.get("friendly_name")
+        for entity_id in hass.states.async_entity_ids("sensor")
+        if entity_id.startswith("sensor.haus")
+    }
+
+    assert actual == {
+        "sensor.haus_score": "HAUS Score",
+        "sensor.haus_usage": "HAUS Usage",
+        "sensor.haus_diversity": "HAUS Diversity",
+        "sensor.haus_users": "HAUS Users",
+    }

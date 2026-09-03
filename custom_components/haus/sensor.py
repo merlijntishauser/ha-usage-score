@@ -40,9 +40,9 @@ async def async_setup_entry(
     async_add_entities(
         [
             HausScoreSensor(coordinator, entry),
-            HausPillarSensor(coordinator, entry, pillar="usage", name="Usage"),
-            HausPillarSensor(coordinator, entry, pillar="diversity", name="Diversity"),
-            HausPillarSensor(coordinator, entry, pillar="users", name="Users"),
+            HausPillarSensor(coordinator, entry, pillar="usage"),
+            HausPillarSensor(coordinator, entry, pillar="diversity"),
+            HausPillarSensor(coordinator, entry, pillar="users"),
         ]
     )
 
@@ -66,7 +66,7 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_name = "Score"
+    _attr_translation_key = "score"
     _attr_icon = "mdi:home-analytics"
     _attr_state_class = SensorStateClass.MEASUREMENT
 
@@ -140,12 +140,11 @@ class HausPillarSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
         entry: HausConfigEntry,
         *,
         pillar: str,
-        name: str,
     ) -> None:
         """Initialise a pillar sensor."""
         super().__init__(coordinator)
         self._pillar = pillar
-        self._attr_name = name
+        self._attr_translation_key = pillar
         self._attr_unique_id = f"{entry.entry_id}_{pillar}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},

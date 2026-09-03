@@ -24,5 +24,21 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "score": {
+        "name": "Score"
+      },
+      "usage": {
+        "name": "Usage"
+      },
+      "diversity": {
+        "name": "Diversity"
+      },
+      "users": {
+        "name": "Users"
+      }
+    }
   }
 }
