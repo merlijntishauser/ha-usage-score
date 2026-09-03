@@ -67,7 +67,6 @@ class HausScoreSensor(CoordinatorEntity[HausCoordinator], SensorEntity):
 
     _attr_has_entity_name = True
     _attr_translation_key = "score"
-    _attr_icon = "mdi:home-analytics"
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: HausCoordinator, entry: HausConfigEntry) -> None:

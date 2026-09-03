@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.icon import async_get_icons
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 
 from custom_components.haus.const import (
@@ -338,4 +339,33 @@ async def test_entity_ids_and_names_are_exactly_these(
         "sensor.haus_usage": "HAUS Usage",
         "sensor.haus_diversity": "HAUS Diversity",
         "sensor.haus_users": "HAUS Users",
+    }
+
+
+async def test_every_sensor_carries_a_distinct_icon(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Four sensors with no device class look alike in a list otherwise.
+
+    The cards carry the identity by colour, but the entity list, the more-info
+    dialog and the search results do not - and there the three pillars had no
+    icon at all.
+
+    Asserted through `async_get_icons`, the loader the frontend itself calls,
+    because icon translations never reach the entity state: `async_get_icons`
+    is consumed only by `components/frontend`, which resolves icons in the
+    browser. A test reading `state.attributes["icon"]` would report None here
+    no matter how correct icons.json was.
+    """
+    await _setup(hass)
+
+    icons = await async_get_icons(hass, "entity", integrations=[DOMAIN])
+
+    # `async_get_icons` strips the category it was asked for, so the shape is
+    # {domain: {platform: {key: {"default": icon}}}}.
+    assert icons[DOMAIN]["sensor"] == {
+        "score": {"default": "mdi:home-analytics"},
+        "usage": {"default": "mdi:flash"},
+        "diversity": {"default": "mdi:shape-outline"},
+        "users": {"default": "mdi:account-group"},
     }
