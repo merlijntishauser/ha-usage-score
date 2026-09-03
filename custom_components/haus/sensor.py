@@ -24,6 +24,11 @@ from .const import (
 from .coordinator import HausConfigEntry, HausCoordinator
 from .scoring import pillar_values
 
+# Every sensor here reads a value the coordinator has already fetched; there is
+# no device to overwhelm and nothing to serialise, so no limit is needed. The
+# quality scale asks for this to be stated rather than left to the default.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

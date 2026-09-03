@@ -44,11 +44,13 @@ namespace_packages = true
 source = ["custom_components/haus"]
 
 [tool.coverage.report]
-# The gate is on the two modules that carry the logic. `__init__.py` is wiring
-# and is deliberately not chased for coverage.
-include = [
-    "custom_components/haus/scoring.py",
-    "custom_components/haus/collectors.py",
-]
-fail_under = 90
+# The whole component, not a chosen two. The gate used to cover only scoring.py
+# and collectors.py, which meant config_flow.py was never measured at all - and
+# the quality scale asks for it specifically, at 100%. A gate you cannot see
+# through is not a gate.
+#
+# 95 rather than 100 on purpose: the scale's own threshold, and a gate at 100
+# turns every unreachable defensive line into a build failure, which is how
+# `# pragma: no cover` starts spreading.
+fail_under = 95
 show_missing = true

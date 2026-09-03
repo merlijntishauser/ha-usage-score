@@ -253,3 +253,17 @@ async def test_score_history_survives_a_restart(
     await reloaded.async_load()
 
     assert reloaded.score_history(12) == [{"week": store.week_key(now), "score": 71}]
+
+
+async def test_history_days_is_zero_before_the_store_has_loaded(
+    hass: HomeAssistant,
+) -> None:
+    """The clock starts at `async_load`, so ask before it and the answer is none.
+
+    Nothing calls it in that order today - the coordinator loads the store
+    during setup - but the guard exists so a future caller cannot get a
+    negative window or a crash out of it.
+    """
+    store = HausStore(hass)
+
+    assert store.history_days(dt_util.utcnow()) == 0

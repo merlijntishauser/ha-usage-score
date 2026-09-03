@@ -254,3 +254,24 @@ async def test_setup_still_succeeds_when_the_card_file_is_missing(
         await _setup(hass)
 
     assert hass.states.get("sensor.haus_score") is not None
+
+
+async def test_an_unloaded_resource_collection_is_loaded_before_it_is_read(
+    hass: HomeAssistant,
+) -> None:
+    """Lovelace's resource collection is lazy, and reading it cold returns nothing.
+
+    Without this, a first-ever setup on an instance whose resources have not
+    been touched would see an empty collection, conclude no HAUS resource
+    exists, and create a second one alongside the first on the next run.
+    """
+    from custom_components.haus.frontend import async_register_resource
+
+    resources = _lovelace(hass, MODE_STORAGE)
+    resources.loaded = False
+
+    await async_register_resource(hass)
+
+    resources.async_load.assert_awaited_once()
+    assert resources.loaded is True
+    resources.async_create_item.assert_awaited_once()

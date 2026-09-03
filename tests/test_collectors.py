@@ -1,6 +1,7 @@
 """Tests for the collectors, the only code in HAUS that reads `hass`."""
 
 from datetime import timedelta
+from unittest.mock import patch
 
 from homeassistant.config_entries import SOURCE_IGNORE, ConfigEntryDisabler
 from homeassistant.core import HomeAssistant
@@ -232,3 +233,22 @@ async def test_mobile_app_registrations_are_counted(hass: HomeAssistant) -> None
     signals = await collect_users(hass)
 
     assert signals.mobile_app_devices == 2
+
+
+async def test_an_entity_that_vanishes_mid_count_is_skipped(
+    hass: HomeAssistant,
+) -> None:
+    """The id list and the state lookup are two reads, and can disagree.
+
+    `async_entity_ids` returns a snapshot; by the time each state is fetched an
+    entity may be gone. It is skipped rather than counted or crashed on, so a
+    removal racing a refresh cannot take the usage pillar down with it.
+    """
+    hass.states.async_set("automation.rule", "on")
+
+    with patch.object(type(hass.states), "get", return_value=None):
+        signals = collect_usage(hass)
+
+    # The id is still in the snapshot, so it is defined; it just never fired.
+    assert signals.automations_defined == 1
+    assert signals.automations_fired == 0
