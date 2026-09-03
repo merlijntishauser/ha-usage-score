@@ -30,6 +30,20 @@ to, so HAUS logs the exact line to paste instead of failing.
 
 Add `custom:haus-card` to a dashboard and you are done.
 
+## Configuration
+
+Two options, both under **Settings → Devices & services → HAUS → Configure**.
+Neither is required; the defaults are right for a stock install.
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| HAGHS entity | `sensor.system_ha_global_health_score` | Where the hygiene pillar is read from. Change it if you have renamed the HAGHS sensor. |
+| Expose per-user detail | off | Lets the household card ask for a per-account breakdown. Off by default, and even on it requires an administrator. |
+
+The per-user option is the only one that changes what leaves the integration,
+and only to an admin over a websocket command inside your own instance. See
+[Privacy](#privacy).
+
 ## The score
 
 ```
@@ -58,7 +72,7 @@ The score bands into a tier, which is what the event reports on:
 | 80–92 | Power user |
 | 93–100 | Overengineered |
 
-Everything refreshes every five minutes.
+The score is recomputed every five minutes; see [How it updates](#how-it-updates).
 
 ### Three rules that shape every number
 
@@ -140,6 +154,27 @@ HAGHS later makes the pillar show up without touching HAUS's configuration.
 There is deliberately no `dependencies` entry in the manifest: HAUS must set up
 cleanly with HAGHS absent, and it does. The entity id is an option, because
 people rename things.
+
+## How it updates
+
+Three mechanisms, because one would not do.
+
+**A five-minute poll.** A `DataUpdateCoordinator` recollects every signal it can
+read directly from `hass` — automations, scripts, scenes, helpers, config
+entries, accounts. Nothing here needs to be faster: these are numbers that move
+over weeks.
+
+**Its own event tallies.** Notifications and per-user activity have no history
+without the recorder, and the recorder may be absent, may exclude these
+entities, and must never be queried on the event loop. So HAUS listens to
+`EVENT_CALL_SERVICE` and `EVENT_STATE_CHANGED` and keeps rolling counters in its
+own storage.
+
+**A recollect once Home Assistant has started.** Setup runs before `automation`,
+`script` and `scene` have loaded, so the first collection of a restart sees an
+empty house. Without a second pass on `EVENT_HOMEASSISTANT_STARTED` the first
+score after every restart would be badly wrong — and would be snapshotted into
+the weekly history on its way past.
 
 ## The cards
 
@@ -315,6 +350,28 @@ administrator rights **and** an opt-in that defaults to off.
 - It is not a config linter. `thewatchman` and `ha-config-auditor` do that.
 - It does not tell you what share of installs you are ahead of. Nobody can.
 
+## Known limitations
+
+Things HAUS gets wrong, or cannot get right, stated so nobody has to discover
+them:
+
+- **Blueprints cannot be counted.** Whether an automation came from one is not
+  visible in the entity registry or in state, and the collectors do not read
+  configuration off disk. The advanced-features metric is a share of the other
+  three signals instead.
+- **The community comparison is a mean, not a rank.** Home Assistant publishes
+  averages and no distribution, so "you are ahead of N% of installs" is not
+  derivable. The figures also ship with the release rather than being fetched,
+  so they are as fresh as your last upgrade.
+- **A tier change while Home Assistant is down goes unreported.** The event
+  fires on an observed crossing, and HAUS was not watching.
+- **Diversity coverage caps at 20 groups.** Cover 20 of the 27 and that half of
+  the pillar is already full marks; covering the remaining seven earns nothing.
+  The target has been tuned against a small number of real instances.
+- **The per-account breakdown needs an administrator and an opt-in.** The
+  household card shows a refusal rather than data for anyone else, by design.
+- **Removing HAUS leaves two things behind.** See below.
+
 ## Troubleshooting
 
 **Hygiene reads `unavailable` although HAGHS is installed.** Check the entity id
@@ -334,6 +391,27 @@ an upgrade settles it.
 
 **HACS shows an old README.** HACS caches it and refreshes on its own only every
 couple of days. Use **Update information** on the repository.
+
+## Removing HAUS
+
+Delete the entry under **Settings → Devices & services → HAUS**, then remove the
+repository from HACS. The entities and their history go with the entry.
+
+Two things are **not** cleaned up automatically, and both are harmless:
+
+- **The Lovelace resource.** HAUS registers `/haus/haus-card.js` itself, and
+  nothing unregisters it. After removal it points at a file that is no longer
+  served, so the cards stop rendering. Remove it under **Settings →
+  Dashboards → three-dot menu → Resources**.
+- **The stored counters.** The rolling notification and activity tallies live in
+  `.storage/haus.counters`. Deleting the entry does not delete that file. It is
+  a few kilobytes of daily counts keyed by Home Assistant user id — the same ids
+  already throughout your own `.storage`, and they have never left the instance
+  — but if you want it gone, it is safe to delete while Home Assistant is
+  stopped.
+
+Reinstalling with that file still in place picks the history back up, which is
+usually what you want after a reinstall and worth knowing if it is not.
 
 ## Development
 
