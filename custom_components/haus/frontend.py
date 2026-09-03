@@ -62,6 +62,50 @@ async def async_register(hass: HomeAssistant) -> None:
     await async_register_resource(hass)
 
 
+def _find_resource(
+    resources: ResourceStorageCollection,
+) -> dict[str, Any] | None:
+    """Return HAUS's own Lovelace resource, ignoring the version query.
+
+    The url carries `?v=` and that is the cache key, so it changes with every
+    release. Matching on the path is what makes a resource identifiable across
+    versions - and one definition of "ours", shared by registration and
+    removal, is what stops the two disagreeing and orphaning one.
+    """
+    for item in resources.async_items():
+        if str(item.get("url", "")).split("?")[0] == f"{URL_BASE}/{CARD_FILENAME}":
+            return dict(item)
+    return None
+
+
+async def async_remove_resource(hass: HomeAssistant) -> None:
+    """Delete the Lovelace resource HAUS registered, if it is still there.
+
+    Called when the config entry is removed. Nothing else unregisters it, so
+    without this the user is left with a resource pointing at a file that is no
+    longer served - and no obvious clue where it came from.
+    """
+    lovelace: LovelaceData | None = hass.data.get(LOVELACE_DOMAIN)
+    if lovelace is None:
+        return
+
+    resources = lovelace.resources
+    # YAML mode never had one created, so there is nothing to undo.
+    if not isinstance(resources, ResourceStorageCollection):
+        return
+
+    if not resources.loaded:
+        await resources.async_load()
+        resources.loaded = True
+
+    existing = _find_resource(resources)
+    if existing is None:
+        return
+
+    await resources.async_delete_item(existing["id"])
+    _LOGGER.debug("Removed the HAUS card Lovelace resource")
+
+
 async def async_register_resource(hass: HomeAssistant) -> None:
     """Create or update the Lovelace resource pointing at the card.
 
@@ -91,12 +135,7 @@ async def async_register_resource(hass: HomeAssistant) -> None:
         await resources.async_load()
         resources.loaded = True
 
-    existing: dict[str, Any] | None = None
-    for item in resources.async_items():
-        item_url = str(item.get("url", ""))
-        if item_url.split("?")[0] == f"{URL_BASE}/{CARD_FILENAME}":
-            existing = item
-            break
+    existing = _find_resource(resources)
 
     if existing is None:
         await resources.async_create_item({"res_type": "module", "url": url})

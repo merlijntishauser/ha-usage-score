@@ -67,6 +67,16 @@ class HausStore:
             "score_by_week": self._score_by_week,
         }
 
+    async def async_remove(self) -> None:
+        """Delete the stored counters.
+
+        Called when the config entry is removed. Remove should mean removed,
+        including the per-user tallies - nothing of HAUS's should outlive it on
+        disk. The cost is that reinstalling starts the rolling windows over,
+        which the README says out loud.
+        """
+        await self._store.async_remove()
+
     async def async_save(self) -> None:
         """Write the counters out now."""
         await self._store.async_save(self._as_dict())

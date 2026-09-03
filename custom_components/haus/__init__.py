@@ -26,6 +26,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN, HAGHS_DOMAIN, NOTIFY_DOMAIN
 from .coordinator import HausConfigEntry, HausCoordinator
 from .frontend import async_register as async_register_frontend
+from .frontend import async_remove_resource as async_remove_frontend
 from .store import HausStore
 from .websocket import async_register as async_register_websocket
 
@@ -123,6 +124,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: HausConfigEntry) -> bool
 async def _async_reload_entry(hass: HomeAssistant, entry: HausConfigEntry) -> None:
     """Reload when the options change, so no restart is needed."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: HausConfigEntry) -> None:
+    """Clean up everything HAUS put outside its own config entry.
+
+    Two things outlive the entry otherwise: the Lovelace resource, which would
+    point at a file no longer served, and the counter store on disk. Neither is
+    dangerous and both are surprising.
+    """
+    await async_remove_frontend(hass)
+    await HausStore(hass).async_remove()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: HausConfigEntry) -> bool:

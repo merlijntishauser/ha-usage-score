@@ -267,3 +267,27 @@ async def test_history_days_is_zero_before_the_store_has_loaded(
     store = HausStore(hass)
 
     assert store.history_days(dt_util.utcnow()) == 0
+
+
+async def test_removing_the_store_actually_deletes_the_counters(
+    hass: HomeAssistant,
+) -> None:
+    """The entry-removal test patches this method, so prove the body works.
+
+    Otherwise the only evidence that removal removes anything is that a mock
+    was called.
+    """
+    store = HausStore(hass)
+    await store.async_load()
+    store.record_notification(dt_util.utcnow())
+    await store.async_save()
+
+    reloaded = HausStore(hass)
+    await reloaded.async_load()
+    assert reloaded.notifications_in_window(dt_util.utcnow()) == 1
+
+    await store.async_remove()
+
+    after = HausStore(hass)
+    await after.async_load()
+    assert after.notifications_in_window(dt_util.utcnow()) == 0

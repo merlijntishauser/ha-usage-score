@@ -369,3 +369,26 @@ async def test_every_sensor_carries_a_distinct_icon(
         "diversity": {"default": "mdi:shape-outline"},
         "users": {"default": "mdi:account-group"},
     }
+
+
+async def test_removing_the_entry_deletes_the_stored_counters(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Remove should mean removed, including the tallies keyed by user id.
+
+    Reinstalling therefore starts the history over. That is the honest reading
+    of removing an integration, and it is the one the privacy section implies:
+    nothing of HAUS's should outlive it on disk.
+    """
+    entry = await _setup(hass)
+    hass.states.async_set(
+        "light.kitchen", "on", context=Context(user_id="alice-user-id")
+    )
+    await hass.async_block_till_done()
+    await entry.runtime_data.store.async_save()
+
+    with patch("custom_components.haus.HausStore.async_remove", AsyncMock()) as removed:
+        assert await hass.config_entries.async_remove(entry.entry_id)
+        await hass.async_block_till_done()
+
+    removed.assert_awaited_once()

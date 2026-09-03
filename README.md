@@ -397,21 +397,14 @@ couple of days. Use **Update information** on the repository.
 Delete the entry under **Settings → Devices & services → HAUS**, then remove the
 repository from HACS. The entities and their history go with the entry.
 
-Two things are **not** cleaned up automatically, and both are harmless:
+That is the whole of it. HAUS also cleans up the two things it put outside its
+own config entry: the Lovelace resource it registered, and the rolling
+notification and activity counters in `.storage/haus.counters`.
 
-- **The Lovelace resource.** HAUS registers `/haus/haus-card.js` itself, and
-  nothing unregisters it. After removal it points at a file that is no longer
-  served, so the cards stop rendering. Remove it under **Settings →
-  Dashboards → three-dot menu → Resources**.
-- **The stored counters.** The rolling notification and activity tallies live in
-  `.storage/haus.counters`. Deleting the entry does not delete that file. It is
-  a few kilobytes of daily counts keyed by Home Assistant user id — the same ids
-  already throughout your own `.storage`, and they have never left the instance
-  — but if you want it gone, it is safe to delete while Home Assistant is
-  stopped.
-
-Reinstalling with that file still in place picks the history back up, which is
-usually what you want after a reinstall and worth knowing if it is not.
+Removing therefore means removing. The one consequence worth knowing is that
+**reinstalling starts the rolling windows over** — the notification and activity
+metrics sit at their neutral value again until enough days have passed, rather
+than picking up where they left off.
 
 ## Development
 

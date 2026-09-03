@@ -275,3 +275,51 @@ async def test_an_unloaded_resource_collection_is_loaded_before_it_is_read(
     resources.async_load.assert_awaited_once()
     assert resources.loaded is True
     resources.async_create_item.assert_awaited_once()
+
+
+async def test_removing_the_entry_deletes_the_lovelace_resource(
+    hass: HomeAssistant,
+) -> None:
+    """Otherwise removal leaves a resource pointing at a file nobody serves."""
+    from custom_components.haus.frontend import async_remove_resource
+
+    resources = _lovelace(hass, MODE_STORAGE)
+    # Cold, as it would be on a removal that follows a restart.
+    resources.loaded = False
+    resources.async_items = MagicMock(
+        return_value=[{"id": "haus-1", "url": "/haus/haus-card.js?v=0.5.0"}]
+    )
+    resources.async_delete_item = AsyncMock()
+
+    await async_remove_resource(hass)
+
+    resources.async_delete_item.assert_awaited_once_with("haus-1")
+    resources.async_load.assert_awaited_once()
+
+
+async def test_removal_leaves_other_peoples_resources_alone(
+    hass: HomeAssistant,
+) -> None:
+    """A card that is not ours is not ours to delete."""
+    from custom_components.haus.frontend import async_remove_resource
+
+    resources = _lovelace(hass, MODE_STORAGE)
+    resources.async_items = MagicMock(
+        return_value=[{"id": "other-1", "url": "/hacsfiles/some-card/some-card.js"}]
+    )
+    resources.async_delete_item = AsyncMock()
+
+    await async_remove_resource(hass)
+
+    resources.async_delete_item.assert_not_awaited()
+
+
+async def test_removal_is_quiet_when_there_is_nothing_to_remove(
+    hass: HomeAssistant,
+) -> None:
+    """YAML mode never had a resource created, so removal has nothing to undo."""
+    from custom_components.haus.frontend import async_remove_resource
+
+    _lovelace(hass, MODE_YAML)
+
+    await async_remove_resource(hass)  # must not raise
