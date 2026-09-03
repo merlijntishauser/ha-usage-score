@@ -65,7 +65,7 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
         )
 
     @property
-    def _haghs_entity_id(self) -> str:
+    def haghs_entity_id(self) -> str:
         """Return the entity id to read the hygiene pillar from.
 
         Read fresh on every refresh rather than cached at setup, so an options
@@ -98,7 +98,7 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
         )
         result = build_result(
             PillarScores(
-                hygiene=collect_hygiene(self.hass, self._haghs_entity_id),
+                hygiene=collect_hygiene(self.hass, self.haghs_entity_id),
                 usage=score_usage(usage_signals),
                 diversity=score_diversity(diversity_signals),
                 users=score_users(users_signals),
