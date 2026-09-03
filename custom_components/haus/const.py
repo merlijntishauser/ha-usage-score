@@ -515,7 +515,7 @@ ACTIVITY_MIN_HISTORY_DAYS: dict[str, int] = {
 # COMMUNITY_AS_OF with them - the card states the date, so a stale figure is
 # visible rather than silent.
 COMMUNITY_SOURCE_URL = "https://analytics.home-assistant.io/data.json"
-COMMUNITY_AS_OF = "2026-09-02"
+COMMUNITY_AS_OF = "2026-09-03"
 
 # avg_automations. Home Assistant counts automation entities, which is exactly
 # what automations_defined counts, so this one is like for like.
@@ -528,7 +528,7 @@ COMMUNITY_AVG_USERS = 2
 
 # reports_statistics against active_installations at the time above: the
 # averages cover this many installs, not the whole fleet.
-COMMUNITY_REPORTING_INSTALLS = 526665
+COMMUNITY_REPORTING_INSTALLS = 526848
 
 # avg_integrations is deliberately NOT carried. Home Assistant counts loaded
 # built-in integrations that pass its reporting filter, excluding custom ones
