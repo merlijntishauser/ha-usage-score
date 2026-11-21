@@ -43,7 +43,8 @@ async def async_register(hass: HomeAssistant) -> None:
     # only when os.path.isdir() holds, and silently registers nothing when
     # handed a file, which leaves the card 404ing with no error anywhere.
     www = integration.file_path / "www"
-    if not (www / CARD_FILENAME).is_file():
+    # A stat is disk I/O, so it goes to the executor rather than the loop.
+    if not await hass.async_add_executor_job((www / CARD_FILENAME).is_file):
         _LOGGER.error(
             "The bundled card %s is missing from %s, so the dashboard card will "
             "not be available. The sensors still work. This usually means the "

@@ -6,6 +6,7 @@ resource itself.
 """
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -254,6 +255,31 @@ async def test_setup_still_succeeds_when_the_card_file_is_missing(
         await _setup(hass)
 
     assert hass.states.get("sensor.haus_score") is not None
+
+
+async def test_the_card_file_check_runs_off_the_event_loop(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Checking for the card is a stat, and a stat is disk I/O.
+
+    Home Assistant's own detector does not patch `Path.is_file`, so nothing
+    would flag it on the loop; this test is what does. Asked for in the HACS
+    review of the default-list submission.
+    """
+    assert await async_setup_component(hass, "http", {})
+    _lovelace(hass, MODE_STORAGE)
+    real_is_file = Path.is_file
+    on_loop: list[bool] = []
+
+    def recording_is_file(self: Path) -> bool:
+        if self.name == CARD_FILENAME:
+            on_loop.append(hass.loop_thread_id == threading.get_ident())
+        return real_is_file(self)
+
+    with patch.object(Path, "is_file", recording_is_file):
+        await _setup(hass)
+
+    assert on_loop == [False]
 
 
 async def test_an_unloaded_resource_collection_is_loaded_before_it_is_read(
