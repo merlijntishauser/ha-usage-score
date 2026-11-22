@@ -3,13 +3,27 @@
 The event is specified in the brief but was left until the score meant
 something. What makes it awkward is not the comparison - it is knowing which
 readings are trustworthy enough to compare.
+
+A new tier is announced only once two consecutive readings agree on it. On
+2026-11-16 one HAGHS reading eight points low took a live instance from Power
+user to Enthusiast and back five minutes later, and both crossings were
+announced.
 """
+
+from dataclasses import replace
 
 from homeassistant.core import CoreState, Event, HomeAssistant
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.haus.const import DOMAIN, DOMAIN_GROUPS, EVENT_TIER_CHANGED
+
+
+async def _refresh(entry: MockConfigEntry, times: int = 1) -> None:
+    """Run the coordinator `times` times, as that many update intervals would."""
+    for _ in range(times):
+        await entry.runtime_data.async_refresh()
+        await entry.runtime_data.hass.async_block_till_done()
 
 
 async def _setup(hass: HomeAssistant) -> MockConfigEntry:
@@ -103,8 +117,7 @@ async def test_event_fires_once_the_tier_actually_moves(
     events = _capture(hass)
 
     _furnish(hass)
-    await entry.runtime_data.async_refresh()
-    await hass.async_block_till_done()
+    await _refresh(entry, times=2)
 
     assert len(events) == 1
     data = events[0].data
@@ -121,8 +134,7 @@ async def test_no_event_when_the_score_moves_but_the_tier_does_not(
     """A tier event that fires on every refresh is a notification nobody keeps."""
     entry = await _setup(hass)
     _furnish(hass)
-    await entry.runtime_data.async_refresh()
-    await hass.async_block_till_done()
+    await _refresh(entry, times=2)
 
     events = _capture(hass)
     hass.states.async_set("automation.one_more", "on")
@@ -138,15 +150,75 @@ async def test_the_direction_says_which_way(
     """ "You dropped a tier" and "you gained one" are different notifications."""
     entry = await _setup(hass)
     _furnish(hass)
-    await entry.runtime_data.async_refresh()
-    await hass.async_block_till_done()
+    await _refresh(entry, times=2)
     climbed = entry.runtime_data.data.tier
 
     events = _capture(hass)
     _strip(hass)
-    await entry.runtime_data.async_refresh()
-    await hass.async_block_till_done()
+    await _refresh(entry, times=2)
 
     assert len(events) == 1
     assert events[0].data["previous_tier"] == climbed
     assert events[0].data["direction"] == "down"
+
+
+async def test_one_reading_in_a_new_tier_is_not_yet_a_change(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The first reading across a boundary is a candidate, not a crossing."""
+    entry = await _setup(hass)
+    events = _capture(hass)
+
+    _furnish(hass)
+    await _refresh(entry)
+
+    assert events == []
+
+
+async def test_a_blip_that_comes_straight_back_is_never_announced(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The 2026-11-16 case: out for one reading, back on the next.
+
+    Announcing it meant two notifications about a dependency hiccup, and
+    nothing the user did.
+    """
+    entry = await _setup(hass)
+    _furnish(hass)
+    await _refresh(entry, times=2)
+    events = _capture(hass)
+
+    _strip(hass)
+    await _refresh(entry)
+    _furnish(hass)
+    await _refresh(entry, times=3)
+
+    assert events == []
+
+
+async def test_two_different_new_tiers_in_a_row_do_not_confirm_each_other(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Agreement means the same tier twice, not "not the old tier" twice.
+
+    Driven through the tier bookkeeping directly: building a house that lands
+    on three chosen tiers in turn is a lot of fixture for one comparison.
+    """
+    entry = await _setup(hass)
+    coordinator = entry.runtime_data
+    baseline = coordinator.data
+    assert baseline.tier == "Starter"
+    events = _capture(hass)
+
+    coordinator._note_tier(replace(baseline, score=45, tier="Tinkerer"))
+    coordinator._note_tier(replace(baseline, score=65, tier="Enthusiast"))
+    await hass.async_block_till_done()
+    assert events == []
+
+    coordinator._note_tier(replace(baseline, score=66, tier="Enthusiast"))
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    assert events[0].data["previous_tier"] == "Starter"
+    assert events[0].data["tier"] == "Enthusiast"
+    assert events[0].data["score"] == 66

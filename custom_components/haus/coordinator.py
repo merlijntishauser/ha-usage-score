@@ -56,6 +56,9 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
         # The last tier considered trustworthy enough to compare against.
         # None until Home Assistant has finished starting: see _note_tier.
         self._tier: str | None = None
+        # A different tier seen on the latest reading, not yet confirmed by a
+        # second one. None when the latest reading agreed with _tier.
+        self._candidate_tier: str | None = None
         super().__init__(
             hass,
             _LOGGER,
@@ -135,6 +138,15 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
         A tier change that happened while Home Assistant was down is therefore
         not reported. HAUS did not observe it, and inventing the transition on
         the way up would be a notification about nothing the user did.
+
+        And a new tier is only announced once two consecutive readings agree on
+        it. One reading from a dependency can be briefly wrong: on 2026-11-16 a
+        single HAGHS value eight points low crossed a live instance from Power
+        user to Enthusiast and back five minutes later, and both crossings were
+        announced. The sensor's `tier` attribute still follows every reading;
+        only the event waits. `previous_tier` is the last announced tier, so a
+        reading that passes through a tier on the way to another does not
+        count as having been there.
         """
         # Not `is_running`, which is true during CoreState.starting as well -
         # exactly the window this needs to exclude. CoreState.running is the
@@ -142,9 +154,17 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
         if self.hass.state is not CoreState.running:
             return
         previous = self._tier
-        self._tier = result.tier
-        if previous is None or previous == result.tier:
+        if previous is None:
+            self._tier = result.tier
             return
+        if result.tier == previous:
+            self._candidate_tier = None
+            return
+        if result.tier != self._candidate_tier:
+            self._candidate_tier = result.tier
+            return
+        self._tier = result.tier
+        self._candidate_tier = None
 
         order = [name for _, name in SCORE_TIERS]
         self.hass.bus.async_fire(

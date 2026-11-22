@@ -334,6 +334,13 @@ on every restart.
 The consequence, stated plainly: a tier change that happened while Home
 Assistant was down is not reported. HAUS did not observe it.
 
+A new tier is also announced only once two consecutive readings agree on it,
+so the event arrives one update interval (five minutes) after the sensor's
+`tier` attribute changes. One briefly wrong reading from a dependency, such as
+a single low HAGHS value, used to announce a drop and a climb back five minutes
+apart; now it announces nothing. `previous_tier` is the last tier that was
+announced.
+
 ## Privacy
 
 No cloud service, no account, no telemetry. Nothing leaves your instance —
@@ -365,6 +372,9 @@ them:
   so they are as fresh as your last upgrade.
 - **A tier change while Home Assistant is down goes unreported.** The event
   fires on an observed crossing, and HAUS was not watching.
+- **The tier event lags the sensor by one update.** It waits for a second
+  reading in the new tier, so a score that sits in a tier for a single update
+  is never announced.
 - **Diversity coverage caps at 20 groups.** Cover 20 of the 27 and that half of
   the pillar is already full marks; covering the remaining seven earns nothing.
   The target has been tuned against a small number of real instances.
