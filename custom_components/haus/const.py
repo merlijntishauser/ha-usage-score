@@ -478,6 +478,11 @@ CONF_HAGHS_ENTITY_ID = "haghs_entity_id"
 # absent-is-never-zero working correctly and hiding the bug in the process.
 DEFAULT_HAGHS_ENTITY_ID = "sensor.system_ha_global_health_score"
 
+# The attribute HAUS reads the hygiene pillar from: HAGHS's application pillar
+# (zombies, integrations, config audit, repairs, updates), not the global score
+# in the sensor's state, which also carries a noisy hardware pillar.
+HAGHS_APPLICATION_SCORE = "application_score"
+
 # Weeks of score history kept for the card's sparkline. HAUS keeps its own
 # weekly snapshots rather than querying the recorder, for the same reason it
 # tallies notifications itself: the recorder may not be there, may exclude

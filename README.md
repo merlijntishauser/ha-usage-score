@@ -52,7 +52,7 @@ score = floor(0.30·hygiene + 0.30·usage + 0.25·diversity + 0.15·users)
 
 | Pillar | Weight | What it measures |
 | --- | --- | --- |
-| Hygiene | 30% | Read from [HAGHS](https://github.com/D-N91/home-assistant-global-health-score), never recomputed |
+| Hygiene | 30% | HAGHS's application pillar, read from [HAGHS](https://github.com/D-N91/home-assistant-global-health-score), never recomputed |
 | Usage | 30% | Automations that fire, scripts, scenes, helpers, notifications |
 | Diversity | 25% | Breadth of integration domain groups, and their evenness |
 | Users | 15% | Accounts that can operate the house, and whether they do |
@@ -145,8 +145,17 @@ count.
 ### Hygiene
 
 HAUS does not recompute hygiene — no zombie-entity counting, no database size,
-no backup checks. That is HAGHS's job and it is settled. HAUS reads
-`sensor.system_ha_global_health_score` and weights it at 30%.
+no backup checks. That is HAGHS's job and it is settled. HAUS reads the
+`application_score` attribute of `sensor.system_ha_global_health_score` and
+weights it at 30%.
+
+The attribute, not the sensor's state. The state is HAGHS's global score, and
+40% of that is its hardware pillar, fed by ten-second pressure-stall readings:
+a single burst of disk activity can take it from 91 to 83 for a minute while
+nothing about the instance's hygiene has changed. The application pillar is
+zombies, failing integrations, the config audit, repairs and pending updates,
+which is what HAUS means by hygiene. A HAGHS old enough to lack the attribute
+is read from its state instead.
 
 Detection is by **loaded config entry**, re-evaluated on every refresh and
 immediately when a `haghs` config entry appears or disappears — so installing

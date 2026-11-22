@@ -108,6 +108,78 @@ async def test_a_disabled_haghs_entry_counts_as_absent(hass: HomeAssistant) -> N
     assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) is None
 
 
+# HAGHS's global score is 40% a hardware pillar fed by ten-second PSI windows.
+# On 2026-11-16 one ten-second I/O stall took it from 91 to 83 for a minute
+# while nothing about the instance's hygiene had changed. HAUS reads the
+# application pillar (zombies, integrations, config audit, repairs, updates)
+# instead, which is what it means by hygiene.
+HAGHS_1116 = {"hardware_score": 80, "application_score": 85}
+
+
+async def test_hygiene_is_haghs_application_score_not_its_global_score(
+    hass: HomeAssistant,
+) -> None:
+    """The 2026-11-16 reading: global 83, application 85."""
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "83", HAGHS_1116)
+
+    assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) == 85.0
+
+
+async def test_a_hardware_dip_does_not_move_hygiene(hass: HomeAssistant) -> None:
+    """Global 91 and global 83 are the same hygiene when only hardware moved."""
+    _install_haghs(hass)
+    hass.states.async_set(
+        DEFAULT_HAGHS_ENTITY_ID, "91", {**HAGHS_1116, "hardware_score": 100}
+    )
+    before = collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "83", HAGHS_1116)
+
+    assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) == before
+
+
+async def test_an_older_haghs_without_the_attribute_falls_back_to_its_state(
+    hass: HomeAssistant,
+) -> None:
+    """A HAGHS that predates `application_score` still provides a pillar."""
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "84", {"hardware_score": 80})
+
+    assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) == 84.0
+
+
+async def test_an_empty_application_score_is_absent_and_not_the_global_score(
+    hass: HomeAssistant,
+) -> None:
+    """The attribute exists but has no value: HAGHS could not measure it.
+
+    Falling back to the global score here would quietly swap one quantity for
+    another, the hardware dip included. Absent is the honest answer.
+    """
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "83", {"application_score": None})
+
+    assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) is None
+
+
+async def test_a_non_numeric_application_score_is_absent(hass: HomeAssistant) -> None:
+    """Same reasoning as an empty one."""
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "83", {"application_score": "n/a"})
+
+    assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) is None
+
+
+async def test_an_out_of_range_application_score_is_clamped(
+    hass: HomeAssistant,
+) -> None:
+    """The same clamp as the state had."""
+    _install_haghs(hass)
+    hass.states.async_set(DEFAULT_HAGHS_ENTITY_ID, "91", {"application_score": 150})
+
+    assert collect_hygiene(hass, DEFAULT_HAGHS_ENTITY_ID) == 100.0
+
+
 async def _setup_haus(hass: HomeAssistant) -> MockConfigEntry:
     """Set up HAUS itself and wait for it to settle."""
     entry = MockConfigEntry(domain=DOMAIN, title="HAUS")

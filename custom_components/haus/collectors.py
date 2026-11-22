@@ -18,6 +18,7 @@ from .const import (
     ATTR_LAST_TRIGGERED,
     AUTOMATION_DOMAIN,
     DOMAIN,
+    HAGHS_APPLICATION_SCORE,
     HAGHS_DOMAIN,
     HELPER_DOMAINS,
     MOBILE_APP_DOMAIN,
@@ -172,6 +173,15 @@ def collect_hygiene(hass: HomeAssistant, entity_id: str) -> float | None:
     None means "no hygiene pillar", which the scoring renormalises around. It
     never means zero: a dependency that is restarting, has not produced a value
     yet, or has been pointed at the wrong entity must not tank the score.
+
+    The value is HAGHS's application pillar, its `application_score`
+    attribute, not the sensor's state. The state is HAGHS's global score, and
+    40% of that is a hardware pillar fed by ten-second pressure-stall windows:
+    on 2026-11-16 one ten-second I/O stall took it from 91 to 83 for a minute
+    while nothing about the instance's hygiene had changed. A HAGHS that
+    predates the attribute still provides a pillar, from its state; one that
+    has the attribute but no usable value in it is absent, rather than quietly
+    swapped for the global score.
     """
     if not hass.config_entries.async_loaded_entries(HAGHS_DOMAIN):
         return None
@@ -180,9 +190,10 @@ def collect_hygiene(hass: HomeAssistant, entity_id: str) -> float | None:
     if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
         return None
 
+    raw = state.attributes.get(HAGHS_APPLICATION_SCORE, state.state)
     try:
-        score = float(state.state)
-    except ValueError:
+        score = float(raw)
+    except TypeError, ValueError:
         return None
 
     return max(float(SCORE_MIN), min(float(SCORE_MAX), score))
