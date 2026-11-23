@@ -1,6 +1,6 @@
 # HAUS — Home Assistant Usage Score
 
-[![HACS custom](https://img.shields.io/badge/HACS-custom-41BDF5.svg)](https://hacs.xyz)
+[![HACS default](https://img.shields.io/badge/HACS-default-41BDF5.svg)](https://hacs.xyz)
 [![Release](https://img.shields.io/github/v/release/merlijntishauser/ha-usage-score)](https://github.com/merlijntishauser/ha-usage-score/releases)
 
 Most dashboards tell you what your house is doing. HAUS tells you how much of
@@ -19,9 +19,18 @@ with it. It works with or without HAGHS installed.
 
 Requires Home Assistant **2026.8.0** or newer.
 
-HACS → three-dot menu → **Custom repositories** → add this repository with
-category **Integration** → install → restart Home Assistant. Then
+HAUS is in the HACS default list. Open HACS, search for **HAUS**, download it
+and restart Home Assistant. Then
 **Settings → Devices & services → Add integration → HAUS**.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=merlijntishauser&repository=ha-usage-score&category=integration)
+
+The button opens HAUS in your own HACS, which saves the search.
+
+If the search does not find it, your HACS has most likely not refreshed its
+list of repositories yet. Add it by hand instead: HACS → three-dot menu →
+**Custom repositories** → `https://github.com/merlijntishauser/ha-usage-score`
+with category **Integration**. Everything after that is the same.
 
 The cards come with it. HAUS serves the bundled file and registers the Lovelace
 resource itself, updating it in place on each version change rather than leaving
