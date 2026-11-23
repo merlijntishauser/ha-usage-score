@@ -227,6 +227,8 @@ DOMAIN_GROUPS: dict[str, str] = {
     "evohome": "climate",
     "generic_thermostat": "climate",
     "smartthinq": "climate",
+    "nibe_heatpump": "climate",
+    "duco": "climate",
     # energy
     "tesla_powerwall": "energy",
     "solaredge": "energy",
@@ -241,6 +243,12 @@ DOMAIN_GROUPS: dict[str, str] = {
     "forecast_solar": "energy",
     "energyzero": "energy",
     "nordpool": "energy",
+    "easyenergy": "energy",
+    "homewizard": "energy",
+    "solaredge_modbus": "energy",
+    "solcast_solar": "energy",
+    "open_meteo_solar_forecast": "energy",
+    "co2signal": "energy",
     # media
     "cast": "media",
     "spotify": "media",
@@ -258,6 +266,7 @@ DOMAIN_GROUPS: dict[str, str] = {
     "music_assistant": "media",
     "emby": "media",
     "heos": "media",
+    "braviatv": "media",
     # network
     "unifi": "network",
     "fritz": "network",
@@ -348,17 +357,22 @@ DOMAIN_GROUPS: dict[str, str] = {
     "buienradar": "weather",
     "metoffice": "weather",
     "pirateweather": "weather",
+    "open_meteo": "weather",
+    "nl_weather": "weather",
     "airly": "air_quality",
     "airvisual": "air_quality",
     "awair": "air_quality",
     "purpleair": "air_quality",
     "waqi": "air_quality",
     "airthings": "air_quality",
+    "google_air_quality": "air_quality",
+    "renson_waves": "air_quality",
     # calendar
     "google": "calendar",
     "caldav": "calendar",
     "local_calendar": "calendar",
     "ics_calendar": "calendar",
+    "afvalwijzer": "calendar",
     # voice
     "assist_pipeline": "voice",
     "wyoming": "voice",
@@ -366,6 +380,8 @@ DOMAIN_GROUPS: dict[str, str] = {
     "google_generative_ai_conversation": "voice",
     "ollama": "voice",
     "assist_microphone": "voice",
+    "anthropic": "voice",
+    "google_translate": "voice",
     # notify
     "telegram_bot": "notify",
     "pushover": "notify",
@@ -397,7 +413,7 @@ DOMAIN_GROUPS: dict[str, str] = {
     "nissan_leaf": "transport",
     "volvooncall": "transport",
     "nederlandse_spoorwegen": "transport",
-    "easyenergy": "transport",
+    "garages_amsterdam": "transport",
     # health
     "withings": "health",
     "fitbit": "health",
@@ -417,6 +433,7 @@ DOMAIN_GROUPS: dict[str, str] = {
     "glances": "storage",
     "nut": "storage",
     "backup": "storage",
+    "influxdb": "storage",
     # tools
     "command_line": "tools",
     "rest": "tools",

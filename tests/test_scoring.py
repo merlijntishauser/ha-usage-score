@@ -398,6 +398,42 @@ def test_a_known_domain_maps_to_its_group() -> None:
     assert group_for_domain("hue") == "lighting"
 
 
+@pytest.mark.parametrize(
+    ("domain", "group"),
+    [
+        ("nibe_heatpump", "climate"),
+        ("duco", "climate"),
+        ("homewizard", "energy"),
+        ("solaredge_modbus", "energy"),
+        ("solcast_solar", "energy"),
+        ("open_meteo_solar_forecast", "energy"),
+        ("co2signal", "energy"),
+        ("easyenergy", "energy"),
+        ("braviatv", "media"),
+        ("open_meteo", "weather"),
+        ("nl_weather", "weather"),
+        ("google_air_quality", "air_quality"),
+        ("renson_waves", "air_quality"),
+        ("afvalwijzer", "calendar"),
+        ("anthropic", "voice"),
+        ("google_translate", "voice"),
+        ("garages_amsterdam", "transport"),
+        ("influxdb", "storage"),
+    ],
+)
+def test_integrations_seen_on_a_real_instance_map_to_their_group(
+    domain: str, group: str
+) -> None:
+    """Integrations a real house runs must not be filed under "other".
+
+    Taken from a live instance on 2026-11-23, where a heat pump, ventilation,
+    weather and two air-quality integrations all landed in OTHER_GROUP and
+    left climate, weather and air quality reported as missing. easyenergy is
+    an energy price feed and was filed under transport.
+    """
+    assert group_for_domain(domain) == group
+
+
 def test_an_unknown_domain_falls_into_other() -> None:
     """A custom integration nobody has heard of must not crash the mapping."""
     assert group_for_domain("some_bespoke_thing") == OTHER_GROUP
