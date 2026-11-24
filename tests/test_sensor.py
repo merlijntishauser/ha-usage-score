@@ -274,6 +274,27 @@ async def test_the_score_is_collected_again_once_home_assistant_has_started(
     refresh_after_start.assert_awaited()
 
 
+async def test_only_people_count_toward_the_users_pillar(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """An account no person uses counts neither as an account nor as activity."""
+    alice = MockUser(name="Alice").add_to_hass(hass)
+    tablet = MockUser(name="Wall tablet").add_to_hass(hass)
+    hass.states.async_set("person.alice", "home", {"user_id": alice.id})
+    entry = await _setup(hass)
+
+    hass.states.async_set("light.hall", "on", context=Context(user_id=tablet.id))
+    hass.states.async_set("light.desk", "on", context=Context(user_id=alice.id))
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    attributes = hass.states.get("sensor.haus_users").attributes
+    assert attributes["active_accounts"] == 1
+    assert attributes["users_active_7d"] == 1
+    assert attributes["users_active_30d"] == 1
+
+
 async def test_the_users_sensor_publishes_counts_not_only_scores(
     hass: HomeAssistant, enable_custom_integrations: None
 ) -> None:

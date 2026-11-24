@@ -154,6 +154,12 @@ STOCK_ZONE_ENTITY_IDS: frozenset[str] = frozenset({"zone.home"})
 
 ZONE_DOMAIN = "zone"
 
+# Person entities, and the attribute that links one to its login. The users
+# pillar counts the accounts a person is linked to, so a wall tablet, a kiosk
+# or a tool that logs in is not taken for a member of the household.
+PERSON_DOMAIN = "person"
+ATTR_USER_ID = "user_id"
+
 # Entity registry platform that template helpers and template entities use.
 TEMPLATE_PLATFORM = "template"
 

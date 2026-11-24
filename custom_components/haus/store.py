@@ -101,13 +101,21 @@ class HausStore:
         self._prune(when)
         self._store.async_delay_save(self._as_dict, STORE_SAVE_DELAY_SECONDS)
 
-    def users_active_within(self, days: int, now: datetime) -> int:
-        """Return how many distinct users acted inside the last `days`."""
+    def users_active_within(
+        self, days: int, now: datetime, among: frozenset[str] | None = None
+    ) -> int:
+        """Return how many distinct users acted inside the last `days`.
+
+        With `among`, only those users count: the coordinator passes the
+        household, so a wall tablet's state changes are not a person's.
+        """
         cutoff = (now - timedelta(days=days)).date()
         active: set[str] = set()
         for day, by_user in self._actions_by_day.items():
             if date.fromisoformat(day) > cutoff:
                 active.update(by_user)
+        if among is not None:
+            active &= among
         return len(active)
 
     def user_action_counts(self, days: int, now: datetime) -> dict[str, int]:

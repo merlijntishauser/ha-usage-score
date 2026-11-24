@@ -11,6 +11,7 @@ from homeassistant.util import dt as dt_util
 
 from .collectors import (
     collect_diversity,
+    collect_household_user_ids,
     collect_hygiene,
     collect_usage,
     collect_users,
@@ -91,11 +92,14 @@ class HausCoordinator(DataUpdateCoordinator[ScoreResult]):
             notification_history_days=self.store.history_days(now),
         )
         diversity_signals = collect_diversity(self.hass)
+        household = await collect_household_user_ids(self.hass)
         users_signals = replace(
-            await collect_users(self.hass),
-            users_active_7d=self.store.users_active_within(ACTIVITY_RECENT_DAYS, now),
+            await collect_users(self.hass, household),
+            users_active_7d=self.store.users_active_within(
+                ACTIVITY_RECENT_DAYS, now, among=household
+            ),
             users_active_30d=self.store.users_active_within(
-                ACTIVITY_SUSTAINED_DAYS, now
+                ACTIVITY_SUSTAINED_DAYS, now, among=household
             ),
             activity_history_days=self.store.history_days(now),
         )

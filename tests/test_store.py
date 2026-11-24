@@ -93,6 +93,21 @@ async def test_distinct_users_active_in_the_window_are_counted(
     assert store.users_active_within(7, now) == 2
 
 
+async def test_activity_can_be_limited_to_the_household(
+    hass: HomeAssistant,
+) -> None:
+    """A wall tablet changing a light is not a person operating the house."""
+    store = HausStore(hass)
+    await store.async_load()
+    now = dt_util.utcnow()
+
+    store.record_action("alice", now)
+    store.record_action("wall-tablet", now)
+
+    assert store.users_active_within(7, now, among=frozenset({"alice", "bob"})) == 1
+    assert store.users_active_within(7, now) == 2
+
+
 async def test_the_seven_and_thirty_day_windows_differ(
     hass: HomeAssistant,
 ) -> None:

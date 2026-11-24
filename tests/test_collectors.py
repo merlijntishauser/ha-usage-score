@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUs
 
 from custom_components.haus.collectors import (
     collect_diversity,
+    collect_household_user_ids,
     collect_usage,
     collect_users,
 )
@@ -258,6 +259,61 @@ async def test_only_real_active_accounts_are_counted(hass: HomeAssistant) -> Non
     signals = await collect_users(hass)
 
     assert signals.active_accounts == baseline + 2
+
+
+async def test_only_accounts_linked_to_a_person_are_counted(
+    hass: HomeAssistant,
+) -> None:
+    """Accounts are people, not the tablets and tools that log in.
+
+    A wall-tablet login, a backup tool's account, a dashboard kiosk: each is an
+    active account no person uses. Once the house links accounts to person
+    entities, only those accounts count. A person without an account (a child
+    who never logs in) cannot operate the house through it, so does not count
+    either.
+    """
+    alice = MockUser(name="Alice").add_to_hass(hass)
+    bob = MockUser(name="Bob").add_to_hass(hass)
+    MockUser(name="Wall tablet").add_to_hass(hass)
+    MockUser(name="Backup tool").add_to_hass(hass)
+    hass.states.async_set("person.alice", "home", {"user_id": alice.id})
+    hass.states.async_set("person.bob", "not_home", {"user_id": bob.id})
+    hass.states.async_set("person.child", "home", {"user_id": None})
+    await hass.async_block_till_done()
+
+    signals = await collect_users(hass)
+
+    assert signals.active_accounts == 2
+    assert await collect_household_user_ids(hass) == frozenset({alice.id, bob.id})
+
+
+async def test_a_person_on_a_deactivated_account_does_not_count(
+    hass: HomeAssistant,
+) -> None:
+    """Linking a person does not bring a switched-off account back."""
+    alice = MockUser(name="Alice").add_to_hass(hass)
+    former = MockUser(name="Former flatmate", is_active=False).add_to_hass(hass)
+    hass.states.async_set("person.alice", "home", {"user_id": alice.id})
+    hass.states.async_set("person.former", "not_home", {"user_id": former.id})
+    await hass.async_block_till_done()
+
+    assert (await collect_users(hass)).active_accounts == 1
+
+
+async def test_without_a_linked_person_every_account_counts(
+    hass: HomeAssistant,
+) -> None:
+    """A house that never linked persons to accounts still has people.
+
+    Counting nobody would score it zero for a choice of bookkeeping, and absent
+    is never zero; so every usable account counts, as before persons were read.
+    """
+    baseline = (await collect_users(hass)).active_accounts
+    MockUser(name="Alice").add_to_hass(hass)
+    hass.states.async_set("person.someone", "home", {"user_id": None})
+    await hass.async_block_till_done()
+
+    assert (await collect_users(hass)).active_accounts == baseline + 1
 
 
 async def test_mobile_app_registrations_are_counted(hass: HomeAssistant) -> None:

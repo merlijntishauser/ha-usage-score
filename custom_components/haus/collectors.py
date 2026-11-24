@@ -16,6 +16,7 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ADVANCED_FEATURES,
     ATTR_LAST_TRIGGERED,
+    ATTR_USER_ID,
     AUTOMATION_DOMAIN,
     DOMAIN,
     HA_SCENE_PLATFORM,
@@ -23,6 +24,7 @@ from .const import (
     HAGHS_DOMAIN,
     HELPER_DOMAINS,
     MOBILE_APP_DOMAIN,
+    PERSON_DOMAIN,
     SCENE_DOMAIN,
     SCORE_MAX,
     SCORE_MIN,
@@ -177,18 +179,41 @@ def collect_diversity(hass: HomeAssistant) -> DiversitySignals:
     return DiversitySignals(group_counts=group_counts(domains))
 
 
-async def collect_users(hass: HomeAssistant) -> UsersSignals:
+async def collect_household_user_ids(hass: HomeAssistant) -> frozenset[str]:
+    """Return the ids of the accounts that belong to people.
+
+    A usable account is active and not system-generated. Of those, the ones a
+    person entity links to are the household: a wall tablet, a dashboard kiosk
+    or a tool with its own login is an account no person uses. A house that has
+    not linked any person to a usable account gets every usable account
+    instead, because counting nobody would score its people as absent.
+
+    The ids go to the coordinator, which uses them to limit the activity tally;
+    they never reach a signal, a state attribute or the diagnostics.
+    """
+    users = await hass.auth.async_get_users()
+    usable = {user.id for user in users if user.is_active and not user.system_generated}
+    linked = {
+        state.attributes.get(ATTR_USER_ID)
+        for state in hass.states.async_all(PERSON_DOMAIN)
+    }
+    return frozenset(usable & linked or usable)
+
+
+async def collect_users(
+    hass: HomeAssistant, household: frozenset[str] | None = None
+) -> UsersSignals:
     """Collect who can operate this house.
 
     Aggregate counts only. The per-user activity counts live in the store and
     are merged in by the coordinator; they never pass through here as detail.
+    `household` is the result of `collect_household_user_ids`, when the
+    caller already has it.
     """
-    users = await hass.auth.async_get_users()
-    active_accounts = sum(
-        1 for user in users if user.is_active and not user.system_generated
-    )
+    if household is None:
+        household = await collect_household_user_ids(hass)
     return UsersSignals(
-        active_accounts=active_accounts,
+        active_accounts=len(household),
         mobile_app_devices=len(hass.config_entries.async_entries(MOBILE_APP_DOMAIN)),
     )
 

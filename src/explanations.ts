@@ -119,14 +119,18 @@ function build(context: ExplanationContext): Record<string, string> {
       "zones beyond zone.home, and a configured voice assistant.",
     accounts:
       `Active accounts that are not system-generated, on ${curve(context, "accounts")} ` +
-      "- a second person who can operate the house is the point of this pillar.",
+      "- a second person who can operate the house is the point of this pillar. " +
+      "Only accounts a person entity is linked to count, so a wall tablet or a " +
+      "tool with its own login is not a member of the household; with no person " +
+      "linked at all, every account counts.",
     mobile_apps:
       "Mobile app registrations as a share of the accounts, capped at 100. " +
       "Someone with three phones is not three people.",
     activity_7d:
       "How many distinct people caused a state change in the last seven days, " +
       "as a share of the accounts. A change with no user behind it is an " +
-      "automation firing, not a person, and does not count.",
+      "automation firing, not a person, and does not count; nor does one made " +
+      "by an account no person is linked to.",
     activity_30d:
       "The same over thirty days. Both windows sit at a neutral value until " +
       "the tally has been running long enough to cover them: a fresh install " +

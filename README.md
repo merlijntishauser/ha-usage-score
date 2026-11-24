@@ -153,6 +153,14 @@ A home only its builder can operate is a hobby. Four metrics: usable accounts
 registration, and how many people actually did something in the last seven and
 thirty days.
 
+**Only people count.** An account counts when a person entity is linked to it
+(Settings → People, where a person is given a login or linked to a user). A wall tablet, a kiosk
+dashboard or a tool with its own login is an account no person uses, and its
+state changes are not anyone's activity either. A person without a login does
+not count, because they cannot operate the house through Home Assistant. A house
+that has not linked any person to an account counts every usable account
+instead, so it is not scored as having nobody.
+
 Activity is attributed through the user id on each state change's context. A
 change with nobody behind it is an automation firing, not a person, and does not
 count.
