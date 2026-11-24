@@ -82,6 +82,14 @@ K_SCRIPT_SCENE_COUNT = 10.0
 SCRIPT_DOMAIN = "script"
 SCENE_DOMAIN = "scene"
 
+# Entity registry platform of the scenes made in Home Assistant itself (the
+# scene editor, or YAML with an id). Scenes on any other platform are brought in
+# by an integration - Hue makes one for every scene on its bridge - and are
+# switched from that integration's own app and switches, which never reaches the
+# scene's state. Counted, they read as routines nobody uses, so only these count.
+# A YAML scene without an id has no registry entry and counts as well.
+HA_SCENE_PLATFORM = "homeassistant"
+
 # Knee for the helper count. A dozen helpers is a house someone has actually
 # shaped around how they live, rather than one left at defaults.
 K_HELPER_COUNT = 12.0

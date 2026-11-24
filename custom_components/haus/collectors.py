@@ -18,6 +18,7 @@ from .const import (
     ATTR_LAST_TRIGGERED,
     AUTOMATION_DOMAIN,
     DOMAIN,
+    HA_SCENE_PLATFORM,
     HAGHS_APPLICATION_SCORE,
     HAGHS_DOMAIN,
     HELPER_DOMAINS,
@@ -56,14 +57,20 @@ def _count_recent(
     cutoff: datetime,
     *,
     from_state: bool = False,
+    exclude: frozenset[str] = frozenset(),
 ) -> tuple[int, int]:
     """Return (defined, used-in-window) for one entity domain.
 
     Automations and scripts date themselves with a `last_triggered` attribute.
     A scene has no such attribute: its state *is* the timestamp it was last
-    activated, so `from_state` reads it from there instead.
+    activated, so `from_state` reads it from there instead. Entities in
+    `exclude` are neither defined nor used.
     """
-    entity_ids = hass.states.async_entity_ids(domain)
+    entity_ids = [
+        entity_id
+        for entity_id in hass.states.async_entity_ids(domain)
+        if entity_id not in exclude
+    ]
     used = 0
     for entity_id in entity_ids:
         state = hass.states.get(entity_id)
@@ -74,6 +81,21 @@ def _count_recent(
         if last_used is not None and last_used >= cutoff:
             used += 1
     return len(entity_ids), used
+
+
+def _integration_scenes(hass: HomeAssistant) -> frozenset[str]:
+    """Return the scenes an integration brought in, rather than made in HA.
+
+    Read from the entity registry: a scene there on any platform other than
+    `homeassistant` belongs to an integration. A scene with no registry entry
+    is YAML without an id, made in Home Assistant, and is not returned.
+    """
+    registry = er.async_get(hass)
+    return frozenset(
+        entry.entity_id
+        for entry in registry.entities.values()
+        if entry.domain == SCENE_DOMAIN and entry.platform != HA_SCENE_PLATFORM
+    )
 
 
 def _count_helpers(hass: HomeAssistant) -> int:
@@ -119,7 +141,11 @@ def collect_usage(hass: HomeAssistant) -> UsageSignals:
     )
     scripts_defined, scripts_run = _count_recent(hass, SCRIPT_DOMAIN, cutoff)
     scenes_defined, scenes_activated = _count_recent(
-        hass, SCENE_DOMAIN, cutoff, from_state=True
+        hass,
+        SCENE_DOMAIN,
+        cutoff,
+        from_state=True,
+        exclude=_integration_scenes(hass),
     )
 
     return UsageSignals(

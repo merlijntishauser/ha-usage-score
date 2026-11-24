@@ -108,7 +108,7 @@ What counts is firing, not existing — the fire rate carries the most weight.
 | --- | --- |
 | Fire rate | Share of automations whose `last_triggered` falls in the last 30 days |
 | Automation count | How many exist, on a saturating curve |
-| Scripts and scenes | Half presence, half whether they get run |
+| Scripts and scenes | Half presence, half whether they get run. Only scenes made in Home Assistant count |
 | Helpers | `input_*`, `counter`, `timer`, `schedule`, from the entity registry |
 | Notifications | `notify` service calls, tallied by HAUS itself |
 | Advanced features | Template entities, zones beyond `zone.home`, a voice assistant |
@@ -118,6 +118,12 @@ recorder must not be queried on the event loop — so HAUS listens for
 `EVENT_CALL_SERVICE` and keeps its own rolling 30-day tally. History runs from
 when HAUS started watching rather than from the first notification, so a quiet
 house still leaves the neutral start behind.
+
+**Scenes an integration brings in are not counted.** Hue, for one, makes a
+scene entity for every scene on its bridge, and those are switched from the
+Hue app and the wall switches, which never reaches the scene's state in Home
+Assistant. Counted, a house with a well-used Hue setup would read as dozens of
+routines nobody runs. Scenes from the scene editor or from YAML count.
 
 **Blueprints are deliberately not counted.** Whether an automation came from a
 blueprint cannot be told from the entity registry or from state without reading

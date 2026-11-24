@@ -101,7 +101,9 @@ function build(context: ExplanationContext): Record<string, string> {
     scripts_scenes:
       "Half whether one-touch routines exist at all, half whether they get " +
       `run - scripts by last_triggered, scenes by their state - in ${w}. The ` +
-      `presence half is ${curve(context, "scripts_scenes")}.`,
+      `presence half is ${curve(context, "scripts_scenes")}. Scenes an ` +
+      "integration brings in, such as Hue's, are left out: they are switched " +
+      "from the integration's own app and switches, which Home Assistant never sees.",
     helpers:
       "input_* entities, counters, timers and schedules, counted from the " +
       "entity registry rather than from state so a helper that is currently " +

@@ -113,6 +113,42 @@ async def test_scenes_are_dated_from_their_state(hass: HomeAssistant) -> None:
     assert signals.scenes_activated == 1
 
 
+async def test_scenes_an_integration_brings_in_are_not_counted(
+    hass: HomeAssistant,
+) -> None:
+    """Only scenes made in Home Assistant count.
+
+    An integration such as Hue creates a scene entity for every scene on its
+    bridge, and those are switched from the bridge's own app and switches,
+    which never reaches the scene's state. Counted, they would read as dozens
+    of routines nobody uses. A scene from the scene editor or YAML is on the
+    `homeassistant` platform, or has no registry entry at all (YAML without an
+    id); both still count.
+    """
+    now = dt_util.utcnow()
+    recent = (now - timedelta(days=1)).isoformat()
+    registry = er.async_get(hass)
+    registry.async_get_or_create(
+        "scene", "homeassistant", "1700000000001", suggested_object_id="movie_night"
+    )
+    registry.async_get_or_create(
+        "scene", "hue", "bridge-scene-1", suggested_object_id="kitchen_bright"
+    )
+    registry.async_get_or_create(
+        "scene", "hue", "bridge-scene-2", suggested_object_id="kitchen_dimmed"
+    )
+    hass.states.async_set("scene.movie_night", recent)
+    hass.states.async_set("scene.yaml_without_id", "unknown")
+    hass.states.async_set("scene.kitchen_bright", recent)
+    hass.states.async_set("scene.kitchen_dimmed", "unknown")
+    await hass.async_block_till_done()
+
+    signals = collect_usage(hass)
+
+    assert signals.scenes_defined == 2
+    assert signals.scenes_activated == 1
+
+
 async def test_helpers_are_counted_from_the_entity_registry(
     hass: HomeAssistant,
 ) -> None:
